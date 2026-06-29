@@ -3,12 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "npx ts-node src/server.ts",
-    "build": "echo 'Add build script here'",
+    "dev": "tsoa spec-and-routes && nodemon",
+    "build": "tsoa spec-and-routes && tsc",
     "test": "echo 'Add test script here'",
     "lint": "echo 'Add lint script here'"
   },
   "dependencies": {
+    "@tsoa/runtime": "7.0.0-alpha.0",
     "express": "^5.2.1",
     "tsoa": "7.0.0-alpha.0"
   },
@@ -17,7 +18,9 @@
     "@repo/typescript-config": "workspace:*",
     "@types/express": "^5.0.6",
     "@types/node": "^22.15.3",
+    "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^6.0.3"
   }
 }

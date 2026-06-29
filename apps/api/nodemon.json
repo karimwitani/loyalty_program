@@ -1,0 +1,7 @@
+{
+    "verbose": true,
+    "watch": ["src"],
+    "ext": "ts",
+    "ignore": ["src/**/*.spec.ts", "src/generated"],
+    "exec": "tsoa spec-and-routes && ts-node -r tsconfig-paths/register ./src/server.ts"
+}
