@@ -56,21 +56,32 @@ ALTER PUBLICATION "supabase_realtime" OWNER TO "postgres";
 ---------------------------------
 -- SECTION: PRIVILEGES
 ---------------------------------
+-- Manage schema usage
+REVOKE ALL ON SCHEMA public FROM public;
 GRANT USAGE ON SCHEMA "public" TO "postgres";
-GRANT USAGE ON SCHEMA "public" TO "anon";
-GRANT USAGE ON SCHEMA "public" TO "authenticated";
 GRANT USAGE ON SCHEMA "public" TO "service_role";
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
+REVOKE ALL ON ALL FUNCTIONS IN SCHEMA public FROM anon, authenticated;
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;
 
-
-
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "postgres";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT UPDATE ON SEQUENCES TO "anon";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT UPDATE ON SEQUENCES TO "authenticated";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT UPDATE ON SEQUENCES TO "service_role";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "postgres";
-
-
+-- Manage table access
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "postgres";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO "anon";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO "authenticated";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO "service_role";
+
+-- Manage sequence access
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon, authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA public GRANT ALL ON SEQUENCES TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA public GRANT UPDATE ON SEQUENCES TO "service_role";
+
+-- Manage function access
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON FUNCTIONS FROM anon, authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA public GRANT ALL ON FUNCTIONS TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA public GRANT ALL ON FUNCTIONS TO "service_role";
+
+-- disable PostgREST API endpoint entirely for anon and authenticated roles, so that they cannot access any endpoints unless explicitly granted
+ALTER ROLE anon SET pgrst.openapi_mode TO 'disabled';
+ALTER ROLE authenticated SET pgrst.openapi_mode TO 'disabled';
+
+-- Reload the PostgREST configuration to apply changes immediately
+NOTIFY pgrst, 'reload config';
