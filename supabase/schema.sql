@@ -97,6 +97,18 @@ $$;
 -- SECTION: TABLES
 ---------------------------------
 
+-- TABLE: public.rewards
+CREATE TABLE "public"."rewards" (
+	"id" uuid NOT NULL DEFAULT public.fn_gen_random_uuid_v7(),
+	"name" TEXT NOT NULL,
+	"required_points" INTEGER NOT NULL,
+    "created_at" timestamptz NOT NULL DEFAULT now(),
+    "updated_at" timestamptz NOT NULL DEFAULT now(),
+    
+	CONSTRAINT "pk_rewards" PRIMARY KEY ("id"),
+	CONSTRAINT "check_required_points_positive" CHECK (required_points > 0)
+);
+
 -- TABLE: public.users
 CREATE TABLE "public"."users" (
     "id" uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -122,6 +134,9 @@ CREATE TABLE "public"."users" (
 ---------------------------------
 -- SECTION: TRIGGERS
 ---------------------------------
+-- TRIGGER: public.rewards
+CREATE TRIGGER "trg_rewards_handle_updated_at" BEFORE UPDATE ON "public"."rewards" FOR EACH ROW EXECUTE FUNCTION public.fn_handle_updated_at();
+
 -- TRIGGER: public.loyalty_balances
 CREATE TRIGGER "trg_users_handle_updated_at" BEFORE UPDATE ON "public"."users" FOR EACH ROW EXECUTE FUNCTION public.fn_handle_updated_at();
 
