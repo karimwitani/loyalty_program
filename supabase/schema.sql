@@ -77,6 +77,17 @@ BEGIN
 END
 $$;
 
+-- FUNCTION - fn_handle_updated_at - Auto-update updated_at on profile changes
+CREATE OR REPLACE FUNCTION public.fn_handle_updated_at()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$;
+
 
 ---------------------------------
 -- SECTION: ENUMS
