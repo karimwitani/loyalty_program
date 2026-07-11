@@ -97,6 +97,16 @@ $$;
 -- SECTION: TABLES
 ---------------------------------
 
+-- TABLE: public.users
+CREATE TABLE "public"."users" (
+    "id" uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    "first_name" text NOT NULL,
+    "last_name" text NOT NULL,
+    "email" text,
+    "created_at" timestamptz NOT NULL DEFAULT now(),
+    "updated_at" timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT "pk_users" PRIMARY KEY ("id")
+);
 ---------------------------------
 -- SECTION: INDEXES
 ---------------------------------
@@ -112,6 +122,8 @@ $$;
 ---------------------------------
 -- SECTION: TRIGGERS
 ---------------------------------
+-- TRIGGER: public.loyalty_balances
+CREATE TRIGGER "trg_users_handle_updated_at" BEFORE UPDATE ON "public"."users" FOR EACH ROW EXECUTE FUNCTION public.fn_handle_updated_at();
 
 ---------------------------------
 -- SECTION: REALTIME
