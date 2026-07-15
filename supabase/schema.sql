@@ -97,12 +97,16 @@ $$;
 --     'credit', 
 --     'debit'
 -- );
+
+-- ENUM: enum_reward_program_type
+CREATE TYPE "public"."enum_reward_program_type" AS ENUM ( 
+    'point_program',
+    'reward_program'
+);
+
 ---------------------------------
 -- SECTION: TABLES
 ---------------------------------
-
-
-
 -- -- TABLE: public.balance_transactions
 -- CREATE TABLE "public"."balance_transactions" (
 -- 	"id" uuid NOT NULL DEFAULT public.fn_gen_random_uuid_v7(),
@@ -125,9 +129,6 @@ CREATE TABLE "public"."rewards" (
 	CONSTRAINT "check_required_points_positive" CHECK (required_points > 0)
 );
 
--- TABLE: public.reward_programs
--- CREATE TABLE ""
-
 -- TABLE: public.organisations
 CREATE TABLE "public"."organisations" (
 	"id" uuid NOT NULL DEFAULT public.fn_gen_random_uuid_v7(),
@@ -136,6 +137,22 @@ CREATE TABLE "public"."organisations" (
     "updated_at" timestamptz NOT NULL DEFAULT now(),
 
 	CONSTRAINT "pk_organisations" PRIMARY KEY ("id")
+);
+
+
+-- TABLE: public.reward_programs
+CREATE TABLE "public"."reward_programs" (
+	"id" uuid NOT NULL DEFAULT public.fn_gen_random_uuid_v7(),
+	"title" TEXT NOT NULL,
+	"org_id" uuid NOT NULL,
+	"type" "public"."enum_reward_program_type" NOT NULL,
+	"reward_id" uuid,
+    "created_at" timestamptz NOT NULL DEFAULT now(),
+    "updated_at" timestamptz NOT NULL DEFAULT now(),
+
+	CONSTRAINT "pk_reward_programs" PRIMARY KEY ("id"),
+	CONSTRAINT "fk_reward_programs_reward_id" FOREIGN KEY (reward_id) REFERENCES public.rewards(id) ON DELETE SET NULL,
+	CONSTRAINT "fk_reward_programs_org_id" FOREIGN KEY (org_id) REFERENCES public.organisations(id) ON DELETE CASCADE
 );
 
 
@@ -172,6 +189,9 @@ CREATE TRIGGER "trg_users_handle_updated_at" BEFORE UPDATE ON "public"."users" F
 
 -- TRIGGER: public.organisations
 CREATE TRIGGER "trg_organisations_handle_updated_at" BEFORE UPDATE ON "public"."organisations" FOR EACH ROW EXECUTE FUNCTION public.fn_handle_updated_at();
+
+-- TRIGGER: public.reward_programs
+CREATE TRIGGER "trg_reward_programs_handle_updated_at" BEFORE UPDATE ON "public"."reward_programs" FOR EACH ROW EXECUTE FUNCTION public.fn_handle_updated_at();
 
 ---------------------------------
 -- SECTION: REALTIME
