@@ -139,7 +139,6 @@ CREATE TABLE "public"."organisations" (
 	CONSTRAINT "pk_organisations" PRIMARY KEY ("id")
 );
 
-
 -- TABLE: public.reward_programs
 CREATE TABLE "public"."reward_programs" (
 	"id" uuid NOT NULL DEFAULT public.fn_gen_random_uuid_v7(),
@@ -155,7 +154,6 @@ CREATE TABLE "public"."reward_programs" (
 	CONSTRAINT "fk_reward_programs_org_id" FOREIGN KEY (org_id) REFERENCES public.organisations(id) ON DELETE CASCADE
 );
 
-
 -- TABLE: public.users
 CREATE TABLE "public"."users" (
     "id" uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -166,6 +164,27 @@ CREATE TABLE "public"."users" (
     "updated_at" timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT "pk_users" PRIMARY KEY ("id")
 );
+
+-- TABLE: public.balances
+CREATE TABLE "public"."balances" (
+	"id" uuid NOT NULL DEFAULT public.fn_gen_random_uuid_v7(),
+	"org_id" uuid NOT NULL,
+	"user_id" uuid NOT NULL,
+	"balance" INTEGER NOT NULL DEFAULT 0,
+    "created_at" timestamptz NOT NULL DEFAULT now(),
+    "updated_at" timestamptz NOT NULL DEFAULT now(),
+
+	-- PK
+	CONSTRAINT "pk_balances" PRIMARY KEY ("id"),
+	
+	-- FK
+	CONSTRAINT "fk_balances_programs_org_id" FOREIGN KEY (org_id) REFERENCES public.organisations(id) ON DELETE CASCADE,
+	CONSTRAINT "fk_balances_programs_user_id" FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
+	
+	-- CHECK
+	CONSTRAINT "check_balance_positive" CHECK (balance >= 0)
+);
+
 ---------------------------------
 -- SECTION: INDEXES
 ---------------------------------
@@ -181,14 +200,17 @@ CREATE TABLE "public"."users" (
 ---------------------------------
 -- SECTION: TRIGGERS
 ---------------------------------
--- TRIGGER: public.rewards
-CREATE TRIGGER "trg_rewards_handle_updated_at" BEFORE UPDATE ON "public"."rewards" FOR EACH ROW EXECUTE FUNCTION public.fn_handle_updated_at();
+-- TRIGGER: public.balances
+CREATE TRIGGER "trg_balances_handle_updated_at" BEFORE UPDATE ON "public"."balances" FOR EACH ROW EXECUTE FUNCTION public.fn_handle_updated_at();
 
 -- TRIGGER: public.loyalty_balances
 CREATE TRIGGER "trg_users_handle_updated_at" BEFORE UPDATE ON "public"."users" FOR EACH ROW EXECUTE FUNCTION public.fn_handle_updated_at();
 
 -- TRIGGER: public.organisations
 CREATE TRIGGER "trg_organisations_handle_updated_at" BEFORE UPDATE ON "public"."organisations" FOR EACH ROW EXECUTE FUNCTION public.fn_handle_updated_at();
+
+-- TRIGGER: public.rewards
+CREATE TRIGGER "trg_rewards_handle_updated_at" BEFORE UPDATE ON "public"."rewards" FOR EACH ROW EXECUTE FUNCTION public.fn_handle_updated_at();
 
 -- TRIGGER: public.reward_programs
 CREATE TRIGGER "trg_reward_programs_handle_updated_at" BEFORE UPDATE ON "public"."reward_programs" FOR EACH ROW EXECUTE FUNCTION public.fn_handle_updated_at();
