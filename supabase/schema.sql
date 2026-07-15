@@ -93,10 +93,10 @@ $$;
 -- SECTION: ENUMS
 ---------------------------------
 -- ENUM: enum_balance_transaction_type
--- CREATE TYPE "public"."enum_balance_transaction_type" AS ENUM ( 
---     'credit', 
---     'debit'
--- );
+CREATE TYPE "public"."enum_balance_transaction_type" AS ENUM ( 
+    'credit', 
+    'debit'
+);
 
 -- ENUM: enum_reward_program_type
 CREATE TYPE "public"."enum_reward_program_type" AS ENUM ( 
@@ -107,15 +107,6 @@ CREATE TYPE "public"."enum_reward_program_type" AS ENUM (
 ---------------------------------
 -- SECTION: TABLES
 ---------------------------------
--- -- TABLE: public.balance_transactions
--- CREATE TABLE "public"."balance_transactions" (
--- 	"id" uuid NOT NULL DEFAULT public.fn_gen_random_uuid_v7(),
--- 	"amount" INTEGER,
--- 	"type" "public"."enum_balance_transaction_type" NOT NULL,
-	
--- 	-- All amounts are stored as positive and we infer their impact on balance using their type
--- 	CONSTRAINT "check_positive_amount" CHECK (amount >= 0)
--- );
 
 -- TABLE: public.rewards
 CREATE TABLE "public"."rewards" (
@@ -185,6 +176,22 @@ CREATE TABLE "public"."balances" (
 	CONSTRAINT "check_balance_positive" CHECK (balance >= 0)
 );
 
+-- TABLE: public.balances
+CREATE TABLE "public"."balance_transactions" (
+	"id" uuid NOT NULL DEFAULT public.fn_gen_random_uuid_v7(),
+	"balance_id" uuid NOT NULL,
+	"type" public.enum_balance_transaction_type NOT NULL,
+	"amount" INTEGER,
+    "created_at" timestamptz NOT NULL DEFAULT now(),
+    "updated_at" timestamptz NOT NULL DEFAULT now(),
+	
+	-- PK
+	CONSTRAINT "pk_balance_transactions" PRIMARY KEY ("id"),
+
+	-- FK
+	CONSTRAINT "fk_balance_transactions_balance_id" FOREIGN KEY (balance_id) REFERENCES public.balances(id) ON DELETE CASCADE
+);
+
 ---------------------------------
 -- SECTION: INDEXES
 ---------------------------------
@@ -200,6 +207,9 @@ CREATE TABLE "public"."balances" (
 ---------------------------------
 -- SECTION: TRIGGERS
 ---------------------------------
+-- TRIGGER: public.balances
+CREATE TRIGGER "trg_balance_transactions_handle_updated_at" BEFORE UPDATE ON "public"."balance_transactions" FOR EACH ROW EXECUTE FUNCTION public.fn_handle_updated_at();
+
 -- TRIGGER: public.balances
 CREATE TRIGGER "trg_balances_handle_updated_at" BEFORE UPDATE ON "public"."balances" FOR EACH ROW EXECUTE FUNCTION public.fn_handle_updated_at();
 
