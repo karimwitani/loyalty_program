@@ -215,6 +215,26 @@ CREATE TABLE "public"."roles" (
 	CONSTRAINT "pk_roles" PRIMARY KEY ("id")
 );
 
+-- TABLE: public.role_permissions
+CREATE TABLE "public"."role_permissions" (
+	"role_id" uuid NOT NULL,
+	"permission_id" uuid NOT NULL,
+	
+	-- FK
+	CONSTRAINT "fk_role_permissions_role_id" FOREIGN KEY (role_id) REFERENCES public.roles(id) ON DELETE CASCADE,
+	CONSTRAINT "fk_role_permissions_permission_id" FOREIGN KEY (permission_id) REFERENCES public.permissions(id) ON DELETE CASCADE
+);
+
+-- TABLE: public.user_roles
+CREATE TABLE "public"."user_roles" (
+	"user_id" uuid NOT NULL,
+	"role_id" uuid NOT NULL,
+	
+	-- FK
+	CONSTRAINT "fk_role_permissions_user_id" FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
+	CONSTRAINT "fk_role_permissions_role_id" FOREIGN KEY (role_id) REFERENCES public.roles(id) ON DELETE CASCADE
+);
+
 ---------------------------------
 -- SECTION: INDEXES
 ---------------------------------
