@@ -192,6 +192,29 @@ CREATE TABLE "public"."balance_transactions" (
 	CONSTRAINT "fk_balance_transactions_balance_id" FOREIGN KEY (balance_id) REFERENCES public.balances(id) ON DELETE CASCADE
 );
 
+-- TABLE: public.permissions
+CREATE TABLE "public"."permissions" (
+	"id" uuid NOT NULL DEFAULT public.fn_gen_random_uuid_v7(),
+    "name" TEXT NOT NULL,
+	"created_at" timestamptz NOT NULL DEFAULT now(),
+    "updated_at" timestamptz NOT NULL DEFAULT now(),
+	
+	-- PK
+	CONSTRAINT "pk_permissions" PRIMARY KEY ("id")
+);
+
+-- TABLE: public.roles
+CREATE TABLE "public"."roles" (
+	"id" uuid NOT NULL DEFAULT public.fn_gen_random_uuid_v7(),
+	"name" TEXT NOT NULL,
+	"scope" TEXT NOT NULL,
+    "created_at" timestamptz NOT NULL DEFAULT now(),
+    "updated_at" timestamptz NOT NULL DEFAULT now(),
+	
+	-- PK
+	CONSTRAINT "pk_roles" PRIMARY KEY ("id")
+);
+
 ---------------------------------
 -- SECTION: INDEXES
 ---------------------------------
@@ -224,6 +247,12 @@ CREATE TRIGGER "trg_rewards_handle_updated_at" BEFORE UPDATE ON "public"."reward
 
 -- TRIGGER: public.reward_programs
 CREATE TRIGGER "trg_reward_programs_handle_updated_at" BEFORE UPDATE ON "public"."reward_programs" FOR EACH ROW EXECUTE FUNCTION public.fn_handle_updated_at();
+
+-- TRIGGER: public.permissions
+CREATE TRIGGER "trg_permissions_handle_updated_at" BEFORE UPDATE ON "public"."permissions" FOR EACH ROW EXECUTE FUNCTION public.fn_handle_updated_at();
+
+-- TRIGGER: public.roles
+CREATE TRIGGER "trg_roles_handle_updated_at" BEFORE UPDATE ON "public"."roles" FOR EACH ROW EXECUTE FUNCTION public.fn_handle_updated_at();
 
 ---------------------------------
 -- SECTION: REALTIME
