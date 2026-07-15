@@ -9,6 +9,7 @@
     "lint": "echo 'Add lint script here'"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.110.6",
     "@tsoa/runtime": "7.0.0-alpha.0",
     "express": "^5.2.1",
     "tsoa": "7.0.0-alpha.0"
