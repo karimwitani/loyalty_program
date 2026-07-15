@@ -92,10 +92,26 @@ $$;
 ---------------------------------
 -- SECTION: ENUMS
 ---------------------------------
-
+-- ENUM: enum_balance_transaction_type
+-- CREATE TYPE "public"."enum_balance_transaction_type" AS ENUM ( 
+--     'credit', 
+--     'debit'
+-- );
 ---------------------------------
 -- SECTION: TABLES
 ---------------------------------
+
+
+
+-- -- TABLE: public.balance_transactions
+-- CREATE TABLE "public"."balance_transactions" (
+-- 	"id" uuid NOT NULL DEFAULT public.fn_gen_random_uuid_v7(),
+-- 	"amount" INTEGER,
+-- 	"type" "public"."enum_balance_transaction_type" NOT NULL,
+	
+-- 	-- All amounts are stored as positive and we infer their impact on balance using their type
+-- 	CONSTRAINT "check_positive_amount" CHECK (amount >= 0)
+-- );
 
 -- TABLE: public.rewards
 CREATE TABLE "public"."rewards" (
@@ -108,6 +124,20 @@ CREATE TABLE "public"."rewards" (
 	CONSTRAINT "pk_rewards" PRIMARY KEY ("id"),
 	CONSTRAINT "check_required_points_positive" CHECK (required_points > 0)
 );
+
+-- TABLE: public.reward_programs
+-- CREATE TABLE ""
+
+-- TABLE: public.organisations
+CREATE TABLE "public"."organisations" (
+	"id" uuid NOT NULL DEFAULT public.fn_gen_random_uuid_v7(),
+	"name" TEXT NOT NULL,
+    "created_at" timestamptz NOT NULL DEFAULT now(),
+    "updated_at" timestamptz NOT NULL DEFAULT now(),
+
+	CONSTRAINT "pk_organisations" PRIMARY KEY ("id")
+);
+
 
 -- TABLE: public.users
 CREATE TABLE "public"."users" (
@@ -139,6 +169,9 @@ CREATE TRIGGER "trg_rewards_handle_updated_at" BEFORE UPDATE ON "public"."reward
 
 -- TRIGGER: public.loyalty_balances
 CREATE TRIGGER "trg_users_handle_updated_at" BEFORE UPDATE ON "public"."users" FOR EACH ROW EXECUTE FUNCTION public.fn_handle_updated_at();
+
+-- TRIGGER: public.organisations
+CREATE TRIGGER "trg_organisations_handle_updated_at" BEFORE UPDATE ON "public"."organisations" FOR EACH ROW EXECUTE FUNCTION public.fn_handle_updated_at();
 
 ---------------------------------
 -- SECTION: REALTIME
