@@ -9,6 +9,7 @@
     "lint": "echo 'Add lint script here'"
   },
   "dependencies": {
+    "@repo/database-schema": "workspace:*",
     "@supabase/supabase-js": "^2.110.6",
     "@tsoa/runtime": "7.0.0-alpha.0",
     "express": "^5.2.1",
@@ -19,6 +20,7 @@
     "@repo/typescript-config": "workspace:*",
     "@types/express": "^5.0.6",
     "@types/node": "^22.15.3",
+    "dotenv": "^17.4.2",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
