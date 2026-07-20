@@ -5,7 +5,12 @@
   "scripts": {
     "dev": "tsoa spec-and-routes && nodemon",
     "build": "tsoa spec-and-routes && tsc",
-    "test": "echo 'Add test script here'",
+    "test": "vitest run --project unit --project component",
+    "env:test": "supabase status -o env --override-name api.url=SUPABASE_URL --override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY | grep '^SUPABASE_' > .env.test",
+    "pretest:integration": "pnpm env:test",
+    "test:integration": "vitest run --project integration",
+    "pretest:e2e": "pnpm env:test",
+    "test:e2e": "vitest run --project e2e",
     "lint": "echo 'Add lint script here'"
   },
   "dependencies": {
@@ -23,11 +28,14 @@
     "@repo/typescript-config": "workspace:*",
     "@types/express": "^5.0.6",
     "@types/node": "^22.15.3",
+    "@types/supertest": "^7.2.1",
     "@types/swagger-ui-express": "^4.1.8",
     "dotenv": "^17.4.2",
     "nodemon": "^3.1.14",
+    "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10"
   }
 }
