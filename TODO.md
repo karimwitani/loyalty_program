@@ -1,0 +1,25 @@
+- [x] add inversify to apps/api
+- [x] redefine tables
+- [x] make the product handle both single reward programs (X stamps for Y product) and points programs (redeem balance to pay for something)
+- [x] define types in domain/types/balances.types.ts
+- [x] implement the balances.repository
+- [x] implement the balances.service
+- [x] create a IBalancesRepository
+- [x] add swagger docs page to the API
+- [] test the /balances endpoint
+- [] research how to concretly implement API versioning like stripe
+- [] research decorated signatures in typescript <> **A type referenced in a decorated signature must be imported with 'import type' or a namespace import when 'isolatedModules' and 'emitDecoratorMetadata' are enabled.**
+- [] lookup all the options for the example `tsconfig.json` in the [tsoa docs]("https://tsoa-community.github.io/docs/getting-started.html")
+- [] learn the difference between `Omit` and `Pick` in typescript
+- [] learn all the options that can go into a `tsoa.json`
+- [] create agent flows that
+    - review staged code and give feedback
+    - discuss architecture
+    - document added code
+    - review test cases and wether code is well tested
+    - create PR summaries
+- [] research what it means to bind.toSelf() <> `container.bind<BalancesController>(BalancesController).toSelf();`
+- [] research how granting permissions to roles works in postgres <> `ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA public GRANT UPDATE ON SEQUENCES TO "service_role";`
+    - What does the `FOR ROLE` block means
+    - What are all the possible grants that we can give.
+- [] seed the DB with some data
