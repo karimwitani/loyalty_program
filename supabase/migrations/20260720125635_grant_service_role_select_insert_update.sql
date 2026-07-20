@@ -1,0 +1,11 @@
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT DELETE, INSERT, SELECT, UPDATE ON TABLES TO service_role;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.balance_transactions TO service_role;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.balances TO service_role;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.organisations TO service_role;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.permissions TO service_role;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.reward_programs TO service_role;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.rewards TO service_role;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.role_permissions TO service_role;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.roles TO service_role;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.user_roles TO service_role;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.users TO service_role;
