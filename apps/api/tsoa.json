@@ -4,11 +4,18 @@
     "controllerPathGlobs": [
         "src/controllers/*controller.ts"
     ],
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["./src/*"]
+        }
+    },
     "spec": {
         "outputDirectory": "build",
         "specVersion": 3
     },
     "routes": {
-        "routesDir": "src/generated"
+        "routesDir": "src/generated",
+        "iocModule": "src/inversify.config.ts"
     }
 }
