@@ -21,6 +21,7 @@ import {
     type OrganisationCreate,
     type OrganisationUpdate,
     OrganisationCreateSchema,
+    OrganisationUpdateSchema,
 } from "@/domain/types/organisations.types";
 import { NotFoundError } from "@/domain/errors/base.errors";
 import z from "zod"
@@ -79,7 +80,7 @@ export class OrganisationsController extends Controller {
     ){
         // .parse throws an error and we dont have to handle it explicitly here
         // the global error handler will do that
-        const validate = OrganisationCreateSchema.parse(body);
+        const validate = OrganisationUpdateSchema.parse(body);
 
         const organisation = this.organisationsService.updateOrganisation(id, validate)
         return organisation
