@@ -25,6 +25,8 @@ export interface IBalancesRepository {
     create: (data: BalanceCreate) => Promise<Balance | null>;
     update: (id: string, data: BalanceUpdate) => Promise<Balance | null>;
     delete: (id: string) => Promise<boolean>;
+    increment: (id: string, amount: number) => Promise<Balance | null>;
+    redeem: (id: string, amount: number) => Promise<Balance | null>;
 }
 
 export class BalancesRepository implements IBalancesRepository {
@@ -42,6 +44,67 @@ export class BalancesRepository implements IBalancesRepository {
         }
 
         return BalanceSchema.parse(data);
+    };
+
+    public async increment(id: string,  amount: number): Promise<Balance | null>{
+        const { data: rpc_data, error: rpc_error} = await supabase.rpc('fn_increment_balance',{"p_amount": amount, "p_balance_id": id });
+        if (rpc_error) {
+            console.log(`Err type from repo: ${typeof rpc_error} `)
+            console.error(`Error incrementing balance ${id}. Err: ${rpc_error.message}`)
+            throw(rpc_error)
+        }
+        if (!rpc_data) {
+            return null;
+        }
+        
+        const { data, error} = await supabase.from("balances")
+            .select(BALANCES_SELECT_QUERY)
+            .eq("id", id)
+            .maybeSingle()
+
+        if (error) {
+            throw(error)
+        }
+        if (!data) {
+            return null;
+        }
+
+        return BalanceSchema.parse(data);
+    };
+
+    public async redeem(id: string, amount: number): Promise<Balance | null>{
+        const { data: rpc_data, error: rpc_error} = await supabase.rpc('fn_decrement_balance',{"p_amount": amount, "p_balance_id": id });
+        if (rpc_error) {
+            console.log(`Err type from repo: ${typeof rpc_error} `)
+            console.error(`Error incrementing balance ${id}. Err: ${rpc_error.message}`)
+            throw(rpc_error)
+        }
+        if (!rpc_data) {
+            return null;
+        }
+        
+        const { data, error} = await supabase.from("balances")
+            .select(BALANCES_SELECT_QUERY)
+            .eq("id", id)
+            .maybeSingle()
+
+        if (error) {
+            throw(error)
+        }
+        if (!data) {
+            return null;
+        }
+
+        return BalanceSchema.parse(data);
+
+        /** TODO: testcases
+         * {
+            code: '23514',
+            details: 'Failing row contains (019fa52c-3a8d-79bc-9fbe-b5feb4a5306f, 019f95d7-438d-7118-ad66-5e3bdcdf4b87, 7494e9ec-f0cb-4483-83c1-4297d20b1b3b, -301, 2026-07-27 20:02:47.05014+00, 2026-07-29 21:24:52.627165+00).',
+            hint: null,
+            message: 'new row for relation "balances" violates check constraint "check_balance_positive"'
+            }
+        */ 
     };
     
     public async findByUserId(id: string):Promise<Balance[]>{
@@ -77,6 +140,15 @@ export class BalancesRepository implements IBalancesRepository {
     };
     
     public async delete(id: string): Promise<boolean>{
-        return false;
+        const { error } = await supabase
+            .from("balances")
+            .delete()
+            .eq("id", id)
+        
+        if (error){
+            throw error;
+        }
+
+        return true;
     };
 }

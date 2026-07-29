@@ -14,6 +14,16 @@ export class InMemoryBalancesRepository implements IBalancesRepository {
         return this.rows.get(id) ?? null;
     }
 
+    public async redeem(id: string): Promise<Balance | null> {
+        // TODO: IMPLEMENT THIS
+        return null;
+    }
+
+    public async increment(id: string): Promise<Balance | null> {
+        // TODO: IMPLEMENT THIS
+        return null;
+    }
+
     public async findByUserId(id: string): Promise<Balance[]> {
         return [...this.rows.values()].filter((row) => row.user_id === id);
     }

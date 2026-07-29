@@ -7,7 +7,9 @@ import {
     Path,
     Request,
     Body,
-    SuccessResponse
+    SuccessResponse,
+    Response,
+    Delete,
 } from "tsoa";
 import { injectable, inject } from "inversify";
 import  {TYPES} from "@/domain/types/di-tokens.types"
@@ -15,8 +17,12 @@ import { BalanceService } from "@/services/balances.service"
 import type { Request as ExRequest } from "express";
 import {
     type BalanceCreate,
-    BalanceCreateSchema
+    type BalanceIncrement,
+    BalanceCreateSchema,
+    BalanceIncrementSchema,
+    BalanceUpdateSchema
 } from "@/domain/types/balances.types";
+import {NotFoundError} from "@/domain/errors/base.errors"
 
 
 @injectable()
@@ -35,6 +41,7 @@ export class BalancesController extends Controller {
     }
 
     @SuccessResponse(200)
+    @Response<NotFoundError>(404, "Not found")
     @Get("{id}")
     public async getBalanceById(
         @Path() id: string,
@@ -54,11 +61,58 @@ export class BalancesController extends Controller {
         @Body() body: BalanceCreate,
         @Request() request: ExRequest
     ){
-        // .parse throws an error and we dont have to handle it explicitly here
+        // parse throws an error and we dont have to handle it explicitly here
         // the global error handler will do that
         const validate = BalanceCreateSchema.parse(body);
 
         const balance = this.balanceService.createBalance(validate)
         return balance
+    }
+
+    @SuccessResponse(201, "Created")
+    @Post("{id}/increment")
+    public async incrementBalance(
+        @Path() id: string,
+        @Body() body: BalanceIncrement,
+        @Request() request: ExRequest
+    ){
+        // parse throws an error and we dont have to handle it explicitly here
+        // the global error handler will do that
+        const validate = BalanceIncrementSchema.parse(body);
+
+        const balance = this.balanceService.incrementBalance(id, validate)
+        return balance
+    }
+
+    @SuccessResponse(201, "Created")
+    @Post("{id}/redeem")
+    public async redeemBalance(
+        @Path() id: string,
+        @Body() body: BalanceIncrement,
+        @Request() request: ExRequest
+    ){
+        // parse throws an error and we dont have to handle it explicitly here
+        // the global error handler will do that
+        const validate = BalanceIncrementSchema.parse(body);
+
+        const balance = this.balanceService.redeemBalance(id, validate)
+        return balance
+    }
+
+    @SuccessResponse(204, "Deleted")
+    @Response<NotFoundError>(404, "Not found")
+    @Delete("{id}")
+    public async deleteBalance(
+        @Path() id: string,
+        @Request() request: ExRequest
+    ){
+        const balance = await this.balanceService.deleteBalance(id)
+        if (!balance) {
+            this.setStatus(404);
+            return null;
+        }
+
+        this.setStatus(204);
+        return null;
     }
 }
