@@ -338,7 +338,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      fn_decrement_balance: {
+        Args: { p_amount: number; p_balance_id: string }
+        Returns: string
+      }
       fn_gen_random_uuid_v7: { Args: never; Returns: string }
+      fn_increment_balance: {
+        Args: { p_amount: number; p_balance_id: string }
+        Returns: string
+      }
     }
     Enums: {
       enum_balance_transaction_type: "credit" | "debit"

@@ -24,8 +24,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
 -- SECTION: FUNCTIONS
 ---------------------------------
 -- FUNCTION - public.fn_gen_random_uuid_v7()
-/**
- * Returns a time-ordered with Unix Epoch UUID (UUIDv7).
+/** Returns a time-ordered with Unix Epoch UUID (UUIDv7).
  * 
  * References:
  * - https://github.com/uuid6/uuid6-ietf-draft
@@ -74,6 +73,56 @@ BEGIN
 	v_bytes := decode(v_timestamp_hex || v_random_hex, 'hex');
 
 	RETURN encode(v_bytes, 'hex')::uuid;
+END
+$$;
+
+-- FUNCTION - public.fn_increment_balance()
+/** Transaction that generates a balance_transaction and subsequently increments the balance
+ * 
+*/
+CREATE OR REPLACE FUNCTION public.fn_increment_balance(p_balance_id uuid, p_amount int4)
+RETURNS uuid
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_balance_transaction_id uuid;
+BEGIN
+	IF p_amount < 1 THEN
+		RAISE EXCEPTION 'amout should be positive';
+	END IF;
+
+	INSERT INTO balance_transactions (balance_id, type, amount )
+	VALUES (p_balance_id, 'credit', p_amount)
+	RETURNING id INTO v_balance_transaction_id;
+	
+	UPDATE balances SET balance = balance + p_amount WHERE id = p_balance_id;
+	
+	return v_balance_transaction_id;
+END
+$$;
+
+-- FUNCTION - public.fn_increment_balance()
+/** Transaction that generates a balance_transaction and subsequently increments the balance
+ * 
+*/
+CREATE OR REPLACE FUNCTION public.fn_decrement_balance(p_balance_id uuid, p_amount int4)
+RETURNS uuid
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_balance_transaction_id uuid;
+BEGIN
+	IF p_amount < 1 THEN
+		RAISE EXCEPTION 'amout should be positive';
+	END IF;
+
+	INSERT INTO balance_transactions (balance_id, type, amount )
+	VALUES (p_balance_id, 'debit', p_amount)
+	RETURNING id INTO v_balance_transaction_id;
+	
+	UPDATE balances SET balance = balance - p_amount WHERE id = p_balance_id;
+	
+	return v_balance_transaction_id;
 END
 $$;
 
