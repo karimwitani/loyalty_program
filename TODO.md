@@ -6,6 +6,7 @@
 - [x] implement the balances.service
 - [x] create a IBalancesRepository
 - [x] add swagger docs page to the API
+- [] test /organisations endpoints
 - [] test the /balances endpoint
 - [] research how to concretly implement API versioning like stripe
 - [] research decorated signatures in typescript <> **A type referenced in a decorated signature must be imported with 'import type' or a namespace import when 'isolatedModules' and 'emitDecoratorMetadata' are enabled.**
@@ -23,3 +24,26 @@
     - What does the `FOR ROLE` block means
     - What are all the possible grants that we can give.
 - [] seed the DB with some data
+
+## Route to implment
+
+### Orgs
+- [x] GET /organisations/[id]
+- [x] PATCH /organisations/[id]
+- [x] DELETE /organisations/[id]
+- [x] POST /organisations
+
+### Users
+- [x] GET /users/[id]
+- [x] PATCH /users/[id]
+- [x] DELETE /users/[id]
+- [x] POST /users
+
+### Balances
+- [x] POST /balances
+- [x] GET /balances/[id]
+- [x] DELETE /balances/[id]
+- [x] POST /balances/[id]/increment
+- [x] POST /balances/[id]/redeem
+- [] GET /balances/[id]/transactions
+- [] GET /balances

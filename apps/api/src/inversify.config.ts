@@ -1,16 +1,22 @@
 import { Container } from "inversify";
 import { TYPES } from "@/domain/types/di-tokens.types";
 
+// Balances
 import { IBalancesRepository, BalancesRepository } from "@/repositories/balances.repositorty";
 import { InMemoryBalancesRepository } from "@/repositories/__fakes__/in-memory-balances.repository";
 import { BalanceService } from "@/services/balances.service";
 import { BalancesController } from "@/controllers/balances.controller";
 
+// Orgs
 import { IOrganisationsRepository, OrganisationsRepository } from "@/repositories/organisations.repository";
 import { InMemoryOrganisationsRepository } from "@/repositories/__fakes__/in-memory-organisations.repository";
 import { OrganisationsService } from "@/services/organisations.service";
 import { OrganisationsController } from "@/controllers/organisations.controller";
 
+// Users
+import { IUsersRepository, UsersRepository } from "@/repositories/users.repository";
+import { UsersService } from "@/services/users.service";
+import { UsersController } from "@/controllers/users.controller";
 
 export function buildContainer(): Container {
     const container = new Container();
@@ -36,6 +42,16 @@ export function buildContainer(): Container {
 
     container.bind<OrganisationsService>(TYPES.OrganisationsService).to(OrganisationsService);
     container.bind<OrganisationsController>(OrganisationsController).toSelf();
+
+    // Users
+    // IUsersRepository
+    container.bind<IUsersRepository>(TYPES.IUsersRepository)
+        .to(UsersRepository)
+        .inSingletonScope();
+
+    container.bind<UsersService>(TYPES.UsersService).to(UsersService);
+    container.bind<UsersController>(UsersController).toSelf();
+
 
     return container;
 }
