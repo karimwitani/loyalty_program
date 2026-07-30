@@ -146,6 +146,11 @@ describe("BalancesController (component, fake repository)", () => {
         });
 
         it("returns 400 when incrementing would overflow the int4 column", async () => {
+            // NB: this asserts the *intended* behavior. InMemoryBalancesRepository
+            // throws a real PostgrestError here, but the real BalancesRepository
+            // throws the raw (unwrapped) rpc error, which the global handler
+            // doesn't recognize as a PostgrestError - so the e2e equivalent of
+            // this test currently asserts 500, not 400. See the e2e test file.
             const createResponse = await request(app).post("/balances").send({
                 org_id: randomUUID(),
                 user_id: randomUUID(),
@@ -207,6 +212,10 @@ describe("BalancesController (component, fake repository)", () => {
         });
 
         it("returns 400 when redeeming more than the current balance", async () => {
+            // NB: asserts intended behavior; see the equivalent note on the
+            // increment-overflow test above - the e2e version of this case
+            // currently asserts 500 due to the unwrapped-error bug in the
+            // real BalancesRepository.
             const createResponse = await request(app).post("/balances").send({
                 org_id: randomUUID(),
                 user_id: randomUUID(),
