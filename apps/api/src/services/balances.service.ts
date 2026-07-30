@@ -36,12 +36,24 @@ export class BalanceService {
 
     public async incrementBalance(id: string, payload: BalanceIncrement){
         const validate = BalanceIncrementSchema.parse(payload);
+
+        const existing = await this.repo.findById(id);
+        if (!existing){
+            throw new NotFoundError(`Balance ${id} not found. Verify that you're passing the proper ID in the request.`)
+        }
+
         const balance = await this.repo.increment(id, validate.amount);
         return balance;
     }
 
     public async redeemBalance(id: string, payload: BalanceIncrement){
         const validate = BalanceIncrementSchema.parse(payload);
+
+        const existing = await this.repo.findById(id);
+        if (!existing){
+            throw new NotFoundError(`Balance ${id} not found. Verify that you're passing the proper ID in the request.`)
+        }
+
         const balance = await this.repo.redeem(id, validate.amount);
         return balance;
     }

@@ -69,6 +69,7 @@ export class BalancesController extends Controller {
     }
 
     @SuccessResponse(201, "Created")
+    @Response<NotFoundError>(404, "Not found")
     @Post("{id}/increment")
     public async incrementBalance(
         @Path() id: string,
@@ -84,6 +85,7 @@ export class BalancesController extends Controller {
     }
 
     @SuccessResponse(201, "Created")
+    @Response<NotFoundError>(404, "Not found")
     @Post("{id}/redeem")
     public async redeemBalance(
         @Path() id: string,
