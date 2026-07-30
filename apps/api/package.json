@@ -5,11 +5,12 @@
   "scripts": {
     "dev": "tsoa spec-and-routes && nodemon",
     "build": "tsoa spec-and-routes && tsc",
+    "pretest": "tsoa spec-and-routes",
     "test": "vitest run --project unit --project component",
     "env:test": "supabase status -o env --override-name api.url=SUPABASE_URL --override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY | grep '^SUPABASE_' > .env.test",
-    "pretest:integration": "pnpm env:test",
+    "pretest:integration": "tsoa spec-and-routes && pnpm env:test",
     "test:integration": "vitest run --project integration",
-    "pretest:e2e": "pnpm env:test",
+    "pretest:e2e": "tsoa spec-and-routes && pnpm env:test",
     "test:e2e": "vitest run --project e2e",
     "lint": "echo 'Add lint script here'"
   },
