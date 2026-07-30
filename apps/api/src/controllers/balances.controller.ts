@@ -20,7 +20,6 @@ import {
     type BalanceIncrement,
     BalanceCreateSchema,
     BalanceIncrementSchema,
-    BalanceUpdateSchema
 } from "@/domain/types/balances.types";
 import {NotFoundError} from "@/domain/errors/base.errors"
 

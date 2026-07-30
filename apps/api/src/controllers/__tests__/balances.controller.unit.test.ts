@@ -4,7 +4,7 @@ import type { Request as ExRequest } from "express";
 
 import { BalancesController } from "@/controllers/balances.controller";
 import { BalanceService } from "@/services/balances.service";
-import type { Balance, BalanceCreate } from "@/domain/types/balances.types";
+import type { Balance, BalanceCreate, BalanceIncrement } from "@/domain/types/balances.types";
 
 function makeBalance(overrides: Partial<Balance> = {}): Balance {
     const now = new Date().toISOString();
@@ -88,6 +88,38 @@ describe("BalancesController", () => {
 
             expect(createBalance).toHaveBeenCalledWith(payload);
             expect(result).toEqual(balance);
+        });
+    });
+
+    describe("incrementBalance", () => {
+        it("rejects a payload with a negative amout before calling the service", async () => {
+            const createBalance = vi.fn();
+            const service = stubService({ createBalance });
+            const controller = new BalancesController(service);
+
+            const uid = randomUUID()
+            const payload = {
+                amount: -5,
+            } as BalanceIncrement;
+
+            await expect(controller.incrementBalance(uid,payload, req)).rejects.toThrow();
+            expect(createBalance).not.toHaveBeenCalled();
+        });
+
+        it("delegates a valid payload to the service", async () => {
+            const balance = makeBalance();
+            const incrementBalance = vi.fn().mockResolvedValue(balance);
+            const service = stubService({ incrementBalance });
+            const controller = new BalancesController(service);
+
+            const payload: BalanceIncrement = {
+                amount: 1,
+            };
+
+            const result = await controller.incrementBalance(balance.id, payload, req);
+
+            expect(incrementBalance).toHaveBeenCalledWith(balance.id, payload);
+            expect(result?.id).toEqual(balance.id);
         });
     });
 });

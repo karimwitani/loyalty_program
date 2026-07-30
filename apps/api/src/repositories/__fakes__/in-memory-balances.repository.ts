@@ -51,7 +51,7 @@ export class InMemoryBalancesRepository implements IBalancesRepository {
         }
         const updated = BalanceSchema.parse({
             ...existing,
-            ...data,
+            ...data, 
             updated_at: new Date().toISOString(),
         });
         this.rows.set(id, updated);
