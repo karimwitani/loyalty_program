@@ -65,10 +65,15 @@ export class OrganisationsRepository implements IOrganisationsRepository {
             .update(data)
             .eq("id", id)
             .select(ORGANISATION_SELECT_QUERY)
-            .maybeSingle();
+            .single();
 
-        if (error || !row) {
-            return null;
+        if (error){
+            const err = toPostgrestError(error)
+            throw err;
+        }
+
+        if (!row) {
+            throw new Error("Failed to update organisation");
         }
         return OrganisationSchema.parse(row);
     };
