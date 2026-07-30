@@ -74,7 +74,7 @@ export type Database = {
           balance: number
           created_at: string
           id: string
-          org_id: string
+          reward_program_id: string
           updated_at: string
           user_id: string
         }
@@ -82,7 +82,7 @@ export type Database = {
           balance?: number
           created_at?: string
           id?: string
-          org_id: string
+          reward_program_id: string
           updated_at?: string
           user_id: string
         }
@@ -90,23 +90,23 @@ export type Database = {
           balance?: number
           created_at?: string
           id?: string
-          org_id?: string
+          reward_program_id?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "fk_balances_programs_org_id"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "organisations"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_balances_programs_user_id"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_balances_reward_program_id"
+            columns: ["reward_program_id"]
+            isOneToOne: false
+            referencedRelation: "reward_programs"
             referencedColumns: ["id"]
           },
         ]

@@ -10,7 +10,7 @@ function makeBalance(overrides: Partial<Balance> = {}): Balance {
     const now = new Date().toISOString();
     return {
         id: randomUUID(),
-        org_id: randomUUID(),
+        reward_program_id: randomUUID(),
         user_id: randomUUID(),
         balance: 100,
         created_at: now,
@@ -63,7 +63,7 @@ describe("BalancesController", () => {
             const controller = new BalancesController(service);
 
             const payload = {
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: -5,
             } as BalanceCreate;
@@ -79,7 +79,7 @@ describe("BalancesController", () => {
             const controller = new BalancesController(service);
 
             const payload: BalanceCreate = {
-                org_id: balance.org_id,
+                reward_program_id: balance.reward_program_id,
                 user_id: balance.user_id,
                 balance: balance.balance,
             };

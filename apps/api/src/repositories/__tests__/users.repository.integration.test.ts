@@ -147,9 +147,16 @@ describe("UsersRepository (integration, real local Supabase)", () => {
                 .single();
             if (orgError) throw orgError;
 
+            const { data: rewardProgram, error: rewardProgramError } = await supabase
+                .from("reward_programs")
+                .insert({ title: `cascade-program-${randomUUID()}`, org_id: org.id, type: "point_program" })
+                .select("id")
+                .single();
+            if (rewardProgramError) throw rewardProgramError;
+
             const { data: balance, error: balanceError } = await supabase
                 .from("balances")
-                .insert({ org_id: org.id, user_id: created!.id, balance: 50 })
+                .insert({ reward_program_id: rewardProgram.id, user_id: created!.id, balance: 50 })
                 .select("id")
                 .single();
             if (balanceError) throw balanceError;
@@ -163,6 +170,7 @@ describe("UsersRepository (integration, real local Supabase)", () => {
                 .maybeSingle();
             expect(remainingBalance).toBeNull();
 
+            await supabase.from("reward_programs").delete().eq("id", rewardProgram.id);
             await supabase.from("organisations").delete().eq("id", org.id);
         });
     });

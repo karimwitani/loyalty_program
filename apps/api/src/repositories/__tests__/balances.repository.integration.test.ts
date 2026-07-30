@@ -12,6 +12,7 @@ describe("BalancesRepository (integration, real local Supabase)", () => {
     const repo = new BalancesRepository();
 
     let orgId: string;
+    let rewardProgramId: string;
     let userId: string;
     let authUserId: string;
 
@@ -23,6 +24,14 @@ describe("BalancesRepository (integration, real local Supabase)", () => {
             .single();
         if (orgError) throw orgError;
         orgId = org.id;
+
+        const { data: rewardProgram, error: rewardProgramError } = await supabase
+            .from("reward_programs")
+            .insert({ title: `integration-program-${randomUUID()}`, org_id: orgId, type: "point_program" })
+            .select("id")
+            .single();
+        if (rewardProgramError) throw rewardProgramError;
+        rewardProgramId = rewardProgram.id;
 
         const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
             email: `integration-${randomUUID()}@test.com`,
@@ -45,23 +54,32 @@ describe("BalancesRepository (integration, real local Supabase)", () => {
 
     afterAll(async () => {
         await supabase.from("users").delete().eq("id", userId);
+        await supabase.from("reward_programs").delete().eq("id", rewardProgramId);
         await supabase.from("organisations").delete().eq("id", orgId);
         await supabase.auth.admin.deleteUser(authUserId);
     });
 
     describe("create", () => {
         it("persists a balance and returns it", async () => {
-            const created = await repo.create({ org_id: orgId, user_id: userId, balance: 100 });
+            const created = await repo.create({ reward_program_id: rewardProgramId, user_id: userId, balance: 100 });
 
-            expect(created?.org_id).toBe(orgId);
+            expect(created?.reward_program_id).toBe(rewardProgramId);
             expect(created?.user_id).toBe(userId);
             expect(created?.balance).toBe(100);
         });
 
-        it("throws a foreign-key-violation error for an org_id that doesn't exist", async () => {
+        it("throws a foreign-key-violation error for a reward_program_id that doesn't exist", async () => {
             await expect(
-                repo.create({ org_id: randomUUID(), user_id: userId, balance: 10 }),
+                repo.create({ reward_program_id: randomUUID(), user_id: userId, balance: 10 }),
             ).rejects.toMatchObject({ code: "23503" });
+        });
+
+        it("throws a unique-violation error for a duplicate (reward_program_id, user_id) pair", async () => {
+            await repo.create({ reward_program_id: rewardProgramId, user_id: userId, balance: 10 });
+
+            await expect(
+                repo.create({ reward_program_id: rewardProgramId, user_id: userId, balance: 20 }),
+            ).rejects.toMatchObject({ code: "23505" });
         });
     });
 
@@ -72,7 +90,7 @@ describe("BalancesRepository (integration, real local Supabase)", () => {
         });
 
         it("returns the row created via create()", async () => {
-            const created = await repo.create({ org_id: orgId, user_id: userId, balance: 50 });
+            const created = await repo.create({ reward_program_id: rewardProgramId, user_id: userId, balance: 50 });
 
             const found = await repo.findById(created!.id);
 
@@ -82,7 +100,7 @@ describe("BalancesRepository (integration, real local Supabase)", () => {
 
     describe("increment", () => {
         it("increments the balance via fn_increment_balance and returns the updated row", async () => {
-            const created = await repo.create({ org_id: orgId, user_id: userId, balance: 20 });
+            const created = await repo.create({ reward_program_id: rewardProgramId, user_id: userId, balance: 20 });
 
             const result = await repo.increment(created!.id, 5);
 
@@ -96,7 +114,7 @@ describe("BalancesRepository (integration, real local Supabase)", () => {
 
     describe("redeem", () => {
         it("decrements the balance via fn_decrement_balance and returns the updated row", async () => {
-            const created = await repo.create({ org_id: orgId, user_id: userId, balance: 20 });
+            const created = await repo.create({ reward_program_id: rewardProgramId, user_id: userId, balance: 20 });
 
             const result = await repo.redeem(created!.id, 5);
 
@@ -104,9 +122,46 @@ describe("BalancesRepository (integration, real local Supabase)", () => {
         });
 
         it("throws a check-constraint-violation error when redeeming more than the current balance", async () => {
-            const created = await repo.create({ org_id: orgId, user_id: userId, balance: 20 });
+            const created = await repo.create({ reward_program_id: rewardProgramId, user_id: userId, balance: 20 });
 
             await expect(repo.redeem(created!.id, 21)).rejects.toMatchObject({ code: "23514" });
+        });
+    });
+
+    describe("cascade delete", () => {
+        it("removes balances when the owning organisation is deleted (transitively via reward_programs)", async () => {
+            const { data: cascadeOrg, error: cascadeOrgError } = await supabase
+                .from("organisations")
+                .insert({ name: `integration-cascade-org-${randomUUID()}` })
+                .select("id")
+                .single();
+            if (cascadeOrgError) throw cascadeOrgError;
+
+            const { data: cascadeProgram, error: cascadeProgramError } = await supabase
+                .from("reward_programs")
+                .insert({
+                    title: `integration-cascade-program-${randomUUID()}`,
+                    org_id: cascadeOrg.id,
+                    type: "point_program",
+                })
+                .select("id")
+                .single();
+            if (cascadeProgramError) throw cascadeProgramError;
+
+            const created = await repo.create({
+                reward_program_id: cascadeProgram.id,
+                user_id: userId,
+                balance: 30,
+            });
+
+            const { error: deleteOrgError } = await supabase
+                .from("organisations")
+                .delete()
+                .eq("id", cascadeOrg.id);
+            if (deleteOrgError) throw deleteOrgError;
+
+            const found = await repo.findById(created!.id);
+            expect(found).toBeNull();
         });
     });
 });

@@ -21,7 +21,7 @@ describe("BalancesController (component, fake repository)", () => {
     describe("POST /balances", () => {
         it("creates a balance and returns 201", async () => {
             const payload = {
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 250,
             };
@@ -29,7 +29,7 @@ describe("BalancesController (component, fake repository)", () => {
             const response = await request(app).post("/balances").send(payload);
 
             expect(response.status).toBe(201);
-            expect(response.body.org_id).toBe(payload.org_id);
+            expect(response.body.reward_program_id).toBe(payload.reward_program_id);
             expect(response.body.user_id).toBe(payload.user_id);
             expect(response.body.balance).toBe(payload.balance);
             expect(() => BalanceSchema.parse(response.body)).not.toThrow();
@@ -37,7 +37,7 @@ describe("BalancesController (component, fake repository)", () => {
 
         it("returns 422 when balance is negative", async () => {
             const response = await request(app).post("/balances").send({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: -5,
             });
@@ -54,9 +54,19 @@ describe("BalancesController (component, fake repository)", () => {
             expect(response.status).toBe(422);
         });
 
-        it("returns 422 when org_id is not a valid UUID", async () => {
+        it("returns 422 when reward_program_id is not a valid UUID", async () => {
             const response = await request(app).post("/balances").send({
-                org_id: "not-a-uuid",
+                reward_program_id: "not-a-uuid",
+                user_id: randomUUID(),
+                balance: 10,
+            });
+
+            expect(response.status).toBe(422);
+        });
+
+        it("returns 422 when the payload carries org_id instead of reward_program_id", async () => {
+            const response = await request(app).post("/balances").send({
+                org_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -66,7 +76,7 @@ describe("BalancesController (component, fake repository)", () => {
 
         it("returns 422 when user_id is not a valid UUID", async () => {
             const response = await request(app).post("/balances").send({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: "not-a-uuid",
                 balance: 10,
             });
@@ -98,7 +108,7 @@ describe("BalancesController (component, fake repository)", () => {
 
         it("returns 200 and the balance created via POST", async () => {
             const payload = {
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 42,
             };
@@ -126,7 +136,7 @@ describe("BalancesController (component, fake repository)", () => {
 
         it("returns 422 when page_size is 0", async () => {
             const createResponse = await request(app).post("/balances").send({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -140,7 +150,7 @@ describe("BalancesController (component, fake repository)", () => {
 
         it("returns 422 when page_size is greater than 100", async () => {
             const createResponse = await request(app).post("/balances").send({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -154,7 +164,7 @@ describe("BalancesController (component, fake repository)", () => {
 
         it("returns 422 when starting_after is not a valid UUID", async () => {
             const createResponse = await request(app).post("/balances").send({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -168,7 +178,7 @@ describe("BalancesController (component, fake repository)", () => {
 
         it("returns 200 with an empty page and defaults applied when no transactions exist", async () => {
             const createResponse = await request(app).post("/balances").send({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -183,7 +193,7 @@ describe("BalancesController (component, fake repository)", () => {
 
         it("paginates seeded transactions newest first, with has_more/next_cursor across two pages", async () => {
             const createResponse = await request(app).post("/balances").send({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -235,7 +245,7 @@ describe("BalancesController (component, fake repository)", () => {
 
         it("returns 422 when amount is 0", async () => {
             const createResponse = await request(app).post("/balances").send({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -249,7 +259,7 @@ describe("BalancesController (component, fake repository)", () => {
 
         it("increments the balance and returns the updated row", async () => {
             const createResponse = await request(app).post("/balances").send({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -269,7 +279,7 @@ describe("BalancesController (component, fake repository)", () => {
             // doesn't recognize as a PostgrestError - so the e2e equivalent of
             // this test currently asserts 500, not 400. See the e2e test file.
             const createResponse = await request(app).post("/balances").send({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 2147483647,
             });
@@ -301,7 +311,7 @@ describe("BalancesController (component, fake repository)", () => {
 
         it("returns 422 when amount is 0", async () => {
             const createResponse = await request(app).post("/balances").send({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -315,7 +325,7 @@ describe("BalancesController (component, fake repository)", () => {
 
         it("redeems the balance and returns the updated row", async () => {
             const createResponse = await request(app).post("/balances").send({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -334,7 +344,7 @@ describe("BalancesController (component, fake repository)", () => {
             // currently asserts 500 due to the unwrapped-error bug in the
             // real BalancesRepository.
             const createResponse = await request(app).post("/balances").send({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -362,7 +372,7 @@ describe("BalancesController (component, fake repository)", () => {
 
         it("deletes the balance and returns 204 with no body", async () => {
             const createResponse = await request(app).post("/balances").send({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
