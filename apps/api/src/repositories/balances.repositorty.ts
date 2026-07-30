@@ -104,15 +104,6 @@ export class BalancesRepository implements IBalancesRepository {
         }
 
         return BalanceSchema.parse(data);
-
-        /** TODO: testcases
-         * {
-            code: '23514',
-            details: 'Failing row contains (019fa52c-3a8d-79bc-9fbe-b5feb4a5306f, 019f95d7-438d-7118-ad66-5e3bdcdf4b87, 7494e9ec-f0cb-4483-83c1-4297d20b1b3b, -301, 2026-07-27 20:02:47.05014+00, 2026-07-29 21:24:52.627165+00).',
-            hint: null,
-            message: 'new row for relation "balances" violates check constraint "check_balance_positive"'
-            }
-        */ 
     };
     
     public async findByUserId(id: string):Promise<Balance[]>{

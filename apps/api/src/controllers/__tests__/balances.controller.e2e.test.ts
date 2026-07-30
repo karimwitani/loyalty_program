@@ -101,4 +101,104 @@ describe("BalancesController (e2e)", () => {
             expect(getResponse.body).toEqual(createResponse.body);
         });
     });
+
+    describe("POST /balances/{id}/increment", () => {
+        it("returns 404 for an id that was never created", async () => {
+            const response = await request(app)
+                .post(`/balances/${randomUUID()}/increment`)
+                .send({ amount: 10 });
+
+            expect(response.status).toBe(404);
+        });
+
+        it("increments the balance via fn_increment_balance and returns the updated row", async () => {
+            const createResponse = await request(app).post("/balances").send({
+                org_id: orgId,
+                user_id: userId,
+                balance: 10,
+            });
+
+            const response = await request(app)
+                .post(`/balances/${createResponse.body.id}/increment`)
+                .send({ amount: 15 });
+
+            expect(response.status).toBe(201);
+            expect(response.body.balance).toBe(25);
+        });
+
+        it("returns 400 when incrementing would overflow the int4 column", async () => {
+            const createResponse = await request(app).post("/balances").send({
+                org_id: orgId,
+                user_id: userId,
+                balance: 2147483647,
+            });
+
+            const response = await request(app)
+                .post(`/balances/${createResponse.body.id}/increment`)
+                .send({ amount: 1 });
+
+            expect(response.status).toBe(400);
+        });
+    });
+
+    describe("POST /balances/{id}/redeem", () => {
+        it("returns 404 for an id that was never created", async () => {
+            const response = await request(app)
+                .post(`/balances/${randomUUID()}/redeem`)
+                .send({ amount: 10 });
+
+            expect(response.status).toBe(404);
+        });
+
+        it("redeems the balance via fn_decrement_balance and returns the updated row", async () => {
+            const createResponse = await request(app).post("/balances").send({
+                org_id: orgId,
+                user_id: userId,
+                balance: 10,
+            });
+
+            const response = await request(app)
+                .post(`/balances/${createResponse.body.id}/redeem`)
+                .send({ amount: 4 });
+
+            expect(response.status).toBe(201);
+            expect(response.body.balance).toBe(6);
+        });
+
+        it("returns 400 when redeeming more than the current balance", async () => {
+            const createResponse = await request(app).post("/balances").send({
+                org_id: orgId,
+                user_id: userId,
+                balance: 10,
+            });
+
+            const response = await request(app)
+                .post(`/balances/${createResponse.body.id}/redeem`)
+                .send({ amount: 11 });
+
+            expect(response.status).toBe(400);
+        });
+    });
+
+    describe("DELETE /balances/{id}", () => {
+        it("returns 404 for an id that was never created", async () => {
+            const response = await request(app).delete(`/balances/${randomUUID()}`);
+
+            expect(response.status).toBe(404);
+        });
+
+        it("deletes the balance and returns 204", async () => {
+            const createResponse = await request(app).post("/balances").send({
+                org_id: orgId,
+                user_id: userId,
+                balance: 10,
+            });
+
+            const deleteResponse = await request(app).delete(`/balances/${createResponse.body.id}`);
+            expect(deleteResponse.status).toBe(204);
+
+            const getResponse = await request(app).get(`/balances/${createResponse.body.id}`);
+            expect(getResponse.status).toBe(404);
+        });
+    });
 });

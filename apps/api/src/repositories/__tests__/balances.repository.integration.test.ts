@@ -79,4 +79,34 @@ describe("BalancesRepository (integration, real local Supabase)", () => {
             expect(found).toEqual(created);
         });
     });
+
+    describe("increment", () => {
+        it("increments the balance via fn_increment_balance and returns the updated row", async () => {
+            const created = await repo.create({ org_id: orgId, user_id: userId, balance: 20 });
+
+            const result = await repo.increment(created!.id, 5);
+
+            expect(result?.balance).toBe(25);
+        });
+
+        it("throws a foreign-key-violation error for a balance id that doesn't exist", async () => {
+            await expect(repo.increment(randomUUID(), 5)).rejects.toMatchObject({ code: "23503" });
+        });
+    });
+
+    describe("redeem", () => {
+        it("decrements the balance via fn_decrement_balance and returns the updated row", async () => {
+            const created = await repo.create({ org_id: orgId, user_id: userId, balance: 20 });
+
+            const result = await repo.redeem(created!.id, 5);
+
+            expect(result?.balance).toBe(15);
+        });
+
+        it("throws a check-constraint-violation error when redeeming more than the current balance", async () => {
+            const created = await repo.create({ org_id: orgId, user_id: userId, balance: 20 });
+
+            await expect(repo.redeem(created!.id, 21)).rejects.toMatchObject({ code: "23514" });
+        });
+    });
 });
