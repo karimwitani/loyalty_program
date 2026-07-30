@@ -397,7 +397,7 @@ Example, `apps/api/src/domain/types/balances.types.ts`:
 
 ```ts
 const BalanceCoreField = z.object({
-  org_id: z.uuid("org_id must be a valid UUID"),
+  reward_program_id: z.uuid("reward_program_id must be a valid UUID"),
   user_id: z.uuid("user_id must be a valid UUID"),
   balance: z.int("balance must be a valid integer").min(0).max(2147483647),
 });
@@ -411,7 +411,7 @@ export const BalanceSchema = BalanceCoreField.extend({
 export const BalanceCreateSchema = BalanceCoreField.strict();
 
 export const BalanceUpdateSchema = BalanceCoreField
-  .omit({ org_id: true, user_id: true }) // immutable on PATCH
+  .omit({ reward_program_id: true, user_id: true }) // immutable on PATCH
   .partial()                              // all remaining fields optional
   .strict();                              // reject unknown keys
 
@@ -512,9 +512,11 @@ Four tiers, split by whether they need a live Supabase instance (see
 - **CI**: `.github/workflows/test.yml` — a `test` job (unit + component, every push, no services)
   and a `test-db` job (integration + e2e, only on PRs targeting `main`, via the
   `supabase/setup-cli` action + `pnpm supabase:start` + `supabase stop`).
-- **Seeding real rows**: integration/e2e tests create prerequisite `organisations`/`users` rows
-  through the same `supabase` client the app itself uses (not a separate DB connection) — see
-  `balances.repository.integration.test.ts`'s `beforeAll`. `service_role` needs
+- **Seeding real rows**: integration/e2e tests create prerequisite `organisations`/`reward_programs`/
+  `users` rows through the same `supabase` client the app itself uses (not a separate DB
+  connection) — see `balances.repository.integration.test.ts`'s `beforeAll`. A balance FKs to
+  `reward_programs`, not `organisations`, directly (`fk_balances_reward_program_id`); org
+  ownership of a balance is transitive through `reward_programs.org_id`. `service_role` needs
   `SELECT`/`INSERT`/`UPDATE`/`DELETE` on a table for this to work; if a future migration creates
   a table without granting those (the pattern every `create_table_*` migration follows is to
   grant only `MAINTAIN, REFERENCES, TRIGGER, TRUNCATE` — see
@@ -550,7 +552,7 @@ Each layer has exactly one reason to change:
 - **Controller** — HTTP concerns only (status codes, path/body shape via tsoa decorators). It
   should never contain business logic or talk to Supabase directly.
 - **Service** — business logic and validation. It's the only layer allowed to compose multiple
-  repository calls or enforce domain rules (e.g. "PATCH can't change `org_id`").
+  repository calls or enforce domain rules (e.g. "PATCH can't change `reward_program_id`").
 - **Repository** — data access only. It's the sole place that imports the Supabase client, and
   the boundary where raw DB rows get parsed back into validated domain types before anything
   above it sees them.
