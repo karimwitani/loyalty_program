@@ -56,7 +56,11 @@ export class BalancesRepository implements IBalancesRepository {
         if (!rpc_data) {
             return null;
         }
-        
+
+        // fn_increment_balance intentionally returns just the transaction id,
+        // not the updated row: `RETURNS TABLE` of arbitrary columns comes back
+        // typed as `any`/JSON in the generated Supabase schema, so we do a
+        // real select here to get a properly typed Balance instead.
         const { data, error} = await supabase.from("balances")
             .select(BALANCES_SELECT_QUERY)
             .eq("id", id)
@@ -82,7 +86,11 @@ export class BalancesRepository implements IBalancesRepository {
         if (!rpc_data) {
             return null;
         }
-        
+
+        // fn_decrement_balance intentionally returns just the transaction id,
+        // not the updated row: `RETURNS TABLE` of arbitrary columns comes back
+        // typed as `any`/JSON in the generated Supabase schema, so we do a
+        // real select here to get a properly typed Balance instead.
         const { data, error} = await supabase.from("balances")
             .select(BALANCES_SELECT_QUERY)
             .eq("id", id)
