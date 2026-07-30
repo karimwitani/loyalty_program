@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import { PostgrestError } from "@supabase/supabase-js";
 import {
     Balance,
     BalanceCreate,
@@ -7,6 +8,8 @@ import {
 } from "@/domain/types/balances.types";
 import { IBalancesRepository } from "@/repositories/balances.repositorty";
 
+const INT4_MAX = 2147483647;
+
 export class InMemoryBalancesRepository implements IBalancesRepository {
     private rows: Map<string, Balance> = new Map();
 
@@ -14,14 +17,58 @@ export class InMemoryBalancesRepository implements IBalancesRepository {
         return this.rows.get(id) ?? null;
     }
 
-    public async redeem(id: string): Promise<Balance | null> {
-        // TODO: IMPLEMENT THIS
-        return null;
+    public async increment(id: string, amount: number): Promise<Balance | null> {
+        const existing = this.rows.get(id);
+        if (!existing) {
+            return null;
+        }
+
+        const balance = existing.balance + amount;
+        if (balance > INT4_MAX) {
+            // Mirrors the error Postgres raises when `balance + p_amount`
+            // overflows the balances.balance int4 column.
+            throw new PostgrestError({
+                message: "integer out of range",
+                details: `${existing.balance} + ${amount} exceeds the int4 column limit.`,
+                hint: "",
+                code: "22003",
+            });
+        }
+
+        const updated = BalanceSchema.parse({
+            ...existing,
+            balance,
+            updated_at: new Date().toISOString(),
+        });
+        this.rows.set(id, updated);
+        return updated;
     }
 
-    public async increment(id: string): Promise<Balance | null> {
-        // TODO: IMPLEMENT THIS
-        return null;
+    public async redeem(id: string, amount: number): Promise<Balance | null> {
+        const existing = this.rows.get(id);
+        if (!existing) {
+            return null;
+        }
+
+        const balance = existing.balance - amount;
+        if (balance < 0) {
+            // Mirrors the check_balance_positive constraint violation
+            // Postgres raises when `balance - p_amount` would go negative.
+            throw new PostgrestError({
+                message: 'new row for relation "balances" violates check constraint "check_balance_positive"',
+                details: `Failing row would contain balance ${balance}.`,
+                hint: "",
+                code: "23514",
+            });
+        }
+
+        const updated = BalanceSchema.parse({
+            ...existing,
+            balance,
+            updated_at: new Date().toISOString(),
+        });
+        this.rows.set(id, updated);
+        return updated;
     }
 
     public async findByUserId(id: string): Promise<Balance[]> {

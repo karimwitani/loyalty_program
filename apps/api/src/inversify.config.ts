@@ -15,6 +15,7 @@ import { OrganisationsController } from "@/controllers/organisations.controller"
 
 // Users
 import { IUsersRepository, UsersRepository } from "@/repositories/users.repository";
+import { InMemoryUsersRepository } from "@/repositories/__fakes__/in-memory-users.repository";
 import { UsersService } from "@/services/users.service";
 import { UsersController } from "@/controllers/users.controller";
 
@@ -44,9 +45,8 @@ export function buildContainer(): Container {
     container.bind<OrganisationsController>(OrganisationsController).toSelf();
 
     // Users
-    // IUsersRepository
     container.bind<IUsersRepository>(TYPES.IUsersRepository)
-        .to(UsersRepository)
+        .to(useFakeRepositories ? InMemoryUsersRepository : UsersRepository)
         .inSingletonScope();
 
     container.bind<UsersService>(TYPES.UsersService).to(UsersService);
