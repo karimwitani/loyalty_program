@@ -34,9 +34,9 @@ export const BalanceCreateSchema = BalanceCoreField.strict()
 
 // For POST /balances/{id}/increment requests
 export const BalanceIncrementSchema = z.object({
-    amount: z.int("balance must be a valid integer")
-        .min(0, "balance cannot be negative")
-        .max(2147483647, "balance cannot be greater than 2,147,483,647 (int4 in underlying DB table)")
+    amount: z.int("amount must be a valid integer")
+        .min(1, "amount must be a positive integer")
+        .max(2147483647, "amount cannot be greater than 2,147,483,647 (int4 in underlying DB table)")
 
 })
 
