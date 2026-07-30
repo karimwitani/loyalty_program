@@ -46,7 +46,9 @@ const PREFIX_TO_HTTP: [string, number][] = [
   ["XX", 500],  // internal error
 ];
 
-export function postgrestErrorToHttpStatus(code: string): number {
+export function postgrestErrorToHttpStatus(code: string | undefined | null): number {
+  if (!code) return 400;
+
   const exact = EXACT_CODE_TO_HTTP[code];
   if (exact !== undefined) return exact;
 
