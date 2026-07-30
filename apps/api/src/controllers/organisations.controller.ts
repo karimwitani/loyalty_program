@@ -47,6 +47,8 @@ export class OrganisationsController extends Controller {
         @Path() id: string,
         @Request() request: ExRequest
     ){
+        z.uuid().parse(id);
+
         const organisation = await this.organisationsService.getOrganisationById(id)
         if (!organisation) {
             this.setStatus(404);
@@ -80,13 +82,14 @@ export class OrganisationsController extends Controller {
     ){
         // .parse throws an error and we dont have to handle it explicitly here
         // the global error handler will do that
+        z.uuid().parse(id);
         const validate = OrganisationUpdateSchema.parse(body);
 
         const organisation = this.organisationsService.updateOrganisation(id, validate)
         return organisation
     }
 
-    @SuccessResponse(200, "Updated")
+    @SuccessResponse(204, "Deleted")
     @Response<NotFoundError>(404, "Not found")
     @Response<ValidateError>(422, "Validation Failed")
     @Delete("{id}")
@@ -97,9 +100,10 @@ export class OrganisationsController extends Controller {
         // .parse throws an error and we dont have to handle it explicitly here
         // the global error handler will do that
         z.uuid().parse(id);
-        // const validate = z.object({id: z.uuid("ID must be a valid UUID")}).parse(id);
 
-        const organisation = this.organisationsService.deleteOrganisation(id)
-        return organisation
+        await this.organisationsService.deleteOrganisation(id)
+
+        this.setStatus(204);
+        return null;
     }
 }

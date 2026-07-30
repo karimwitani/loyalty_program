@@ -47,6 +47,8 @@ export class UsersController extends Controller {
         @Path() id: string,
         @Request() request: ExRequest
     ){
+        z.uuid().parse(id);
+
         const user = await this.usersService.getUserById(id)
         if (!user) {
             this.setStatus(404);
@@ -81,13 +83,14 @@ export class UsersController extends Controller {
     ){
         // .parse throws an error and we dont have to handle it explicitly here
         // the global error handler will do that
+        z.uuid().parse(id);
         const validate = UserUpdateSchema.parse(body);
 
         const user = this.usersService.updateUser(id, validate)
         return user
     }
 
-    @SuccessResponse(200, "Updated")
+    @SuccessResponse(204, "Deleted")
     @Response<NotFoundError>(404, "Not found")
     @Response<ValidateError>(422, "Validation Failed")
     @Delete("{id}")
@@ -98,9 +101,10 @@ export class UsersController extends Controller {
         // .parse throws an error and we dont have to handle it explicitly here
         // the global error handler will do that
         z.uuid().parse(id);
-        // const validate = z.object({id: z.uuid("ID must be a valid UUID")}).parse(id);
 
-        const user = this.usersService.deleteUser(id)
-        return user
+        await this.usersService.deleteUser(id)
+
+        this.setStatus(204);
+        return null;
     }
 }

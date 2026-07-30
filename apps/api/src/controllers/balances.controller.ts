@@ -22,6 +22,7 @@ import {
     BalanceIncrementSchema,
 } from "@/domain/types/balances.types";
 import {NotFoundError} from "@/domain/errors/base.errors"
+import z from "zod"
 
 
 @injectable()
@@ -46,6 +47,8 @@ export class BalancesController extends Controller {
         @Path() id: string,
         @Request() request: ExRequest
     ){
+        z.uuid().parse(id);
+
         const balance = await this.balanceService.getBalanceById(id)
         if (!balance) {
             this.setStatus(404);
@@ -78,6 +81,7 @@ export class BalancesController extends Controller {
     ){
         // parse throws an error and we dont have to handle it explicitly here
         // the global error handler will do that
+        z.uuid().parse(id);
         const validate = BalanceIncrementSchema.parse(body);
 
         const balance = this.balanceService.incrementBalance(id, validate)
@@ -94,6 +98,7 @@ export class BalancesController extends Controller {
     ){
         // parse throws an error and we dont have to handle it explicitly here
         // the global error handler will do that
+        z.uuid().parse(id);
         const validate = BalanceIncrementSchema.parse(body);
 
         const balance = this.balanceService.redeemBalance(id, validate)
@@ -107,11 +112,9 @@ export class BalancesController extends Controller {
         @Path() id: string,
         @Request() request: ExRequest
     ){
-        const balance = await this.balanceService.deleteBalance(id)
-        if (!balance) {
-            this.setStatus(404);
-            return null;
-        }
+        z.uuid().parse(id);
+
+        await this.balanceService.deleteBalance(id)
 
         this.setStatus(204);
         return null;
