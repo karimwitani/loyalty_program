@@ -5,6 +5,7 @@ import {
     Route,
     Tags,
     Path,
+    Query,
     Request,
     Body,
     SuccessResponse,
@@ -21,6 +22,7 @@ import {
     BalanceCreateSchema,
     BalanceIncrementSchema,
 } from "@/domain/types/balances.types";
+import { type BalanceTransactionPage } from "@/domain/types/balance_transactions.types";
 import {NotFoundError} from "@/domain/errors/base.errors"
 import z from "zod"
 
@@ -55,6 +57,20 @@ export class BalancesController extends Controller {
             return null;
         }
         return balance;
+    }
+
+    @SuccessResponse(200)
+    @Response<NotFoundError>(404, "Not found")
+    @Get("{id}/transactions")
+    public async getBalanceTransactions(
+        @Path() id: string,
+        @Request() request: ExRequest,
+        @Query() page_size?: number,
+        @Query() starting_after?: string
+    ): Promise<BalanceTransactionPage> {
+        z.uuid().parse(id);
+
+        return this.balanceService.getBalanceTransactions(id, { page_size, starting_after });
     }
 
     @SuccessResponse(201, "Created")

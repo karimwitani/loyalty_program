@@ -4,6 +4,8 @@ import { TYPES } from "@/domain/types/di-tokens.types";
 // Balances
 import { IBalancesRepository, BalancesRepository } from "@/repositories/balances.repositorty";
 import { InMemoryBalancesRepository } from "@/repositories/__fakes__/in-memory-balances.repository";
+import { IBalanceTransactionsRepository, BalanceTransactionsRepository } from "@/repositories/balance_transactions.repository";
+import { InMemoryBalanceTransactionsRepository } from "@/repositories/__fakes__/in-memory-balance-transactions.repository";
 import { BalanceService } from "@/services/balances.service";
 import { BalancesController } from "@/controllers/balances.controller";
 
@@ -31,6 +33,10 @@ export function buildContainer(): Container {
     // Balances
     container.bind<IBalancesRepository>(TYPES.IBalancesRepository)
         .to(useFakeRepositories ? InMemoryBalancesRepository : BalancesRepository)
+        .inSingletonScope();
+
+    container.bind<IBalanceTransactionsRepository>(TYPES.IBalanceTransactionsRepository)
+        .to(useFakeRepositories ? InMemoryBalanceTransactionsRepository : BalanceTransactionsRepository)
         .inSingletonScope();
 
     container.bind<BalanceService>(TYPES.BalancesService).to(BalanceService);

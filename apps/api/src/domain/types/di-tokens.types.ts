@@ -1,6 +1,7 @@
 export const TYPES = {
     // Balances
     IBalancesRepository: Symbol.for("IBalancesRepository"),
+    IBalanceTransactionsRepository: Symbol.for("IBalanceTransactionsRepository"),
     BalancesService: Symbol.for("BalancesService"),
     
     // Orgs
