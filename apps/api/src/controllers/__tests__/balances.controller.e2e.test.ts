@@ -102,6 +102,65 @@ describe("BalancesController (e2e)", () => {
         });
     });
 
+    describe("GET /balances/{id}/transactions", () => {
+        it("returns 404 for an id that was never created", async () => {
+            const response = await request(app).get(`/balances/${randomUUID()}/transactions`);
+            expect(response.status).toBe(404);
+        });
+
+        it("returns 200 with an empty page when the balance has no transactions", async () => {
+            const createResponse = await request(app).post("/balances").send({
+                org_id: orgId,
+                user_id: userId,
+                balance: 100,
+            });
+
+            const response = await request(app).get(
+                `/balances/${createResponse.body.id}/transactions`,
+            );
+
+            expect(response.status).toBe(200);
+            expect(response.body).toEqual({ data: [], has_more: false, next_cursor: null });
+        });
+
+        it("pages through the history matching the increments/redeems performed, newest first", async () => {
+            const createResponse = await request(app).post("/balances").send({
+                org_id: orgId,
+                user_id: userId,
+                balance: 100,
+            });
+            const balanceId = createResponse.body.id;
+
+            await request(app).post(`/balances/${balanceId}/increment`).send({ amount: 10 });
+            await request(app).post(`/balances/${balanceId}/redeem`).send({ amount: 5 });
+            await request(app).post(`/balances/${balanceId}/increment`).send({ amount: 20 });
+
+            const firstPage = await request(app)
+                .get(`/balances/${balanceId}/transactions`)
+                .query({ page_size: 2 });
+
+            expect(firstPage.status).toBe(200);
+            expect(firstPage.body.data).toHaveLength(2);
+            expect(firstPage.body.data.map((t: { type: string; amount: number }) => [t.type, t.amount])).toEqual([
+                ["credit", 20],
+                ["debit", 5],
+            ]);
+            expect(firstPage.body.has_more).toBe(true);
+            expect(firstPage.body.next_cursor).not.toBeNull();
+
+            const secondPage = await request(app)
+                .get(`/balances/${balanceId}/transactions`)
+                .query({ page_size: 2, starting_after: firstPage.body.next_cursor });
+
+            expect(secondPage.status).toBe(200);
+            expect(secondPage.body.data).toHaveLength(1);
+            expect(secondPage.body.data[0].type).toBe("credit");
+            expect(secondPage.body.data[0].amount).toBe(10);
+            expect(secondPage.body.has_more).toBe(false);
+            expect(secondPage.body.next_cursor).toBeNull();
+        });
+    });
+
     describe("POST /balances/{id}/increment", () => {
         it("returns 404 for an id that was never created", async () => {
             const response = await request(app)

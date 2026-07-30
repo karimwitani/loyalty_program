@@ -3,7 +3,19 @@ import request from "supertest";
 import { randomUUID } from "crypto";
 
 import app from "@/app";
+import { iocContainer } from "@/inversify.config";
+import { TYPES } from "@/domain/types/di-tokens.types";
 import { BalanceSchema } from "@/domain/types/balances.types";
+import { InMemoryBalanceTransactionsRepository } from "@/repositories/__fakes__/in-memory-balance-transactions.repository";
+
+// Same singleton-scoped fake bound into `app`'s container - see
+// `USE_FAKE_REPOSITORIES` in inversify.config.ts. There is no POST endpoint
+// for transactions (they're only ever written by the balance RPCs in the
+// real DB, see docs/api_design.md), so tests seed fixture rows directly
+// on the fake rather than through HTTP.
+const transactionsRepo = iocContainer.get<InMemoryBalanceTransactionsRepository>(
+    TYPES.IBalanceTransactionsRepository,
+);
 
 describe("BalancesController (component, fake repository)", () => {
     describe("POST /balances", () => {
@@ -96,6 +108,111 @@ describe("BalancesController (component, fake repository)", () => {
 
             expect(getResponse.status).toBe(200);
             expect(getResponse.body).toEqual(createResponse.body);
+        });
+    });
+
+    describe("GET /balances/{id}/transactions", () => {
+        it("returns 404 for an id that was never created", async () => {
+            const response = await request(app).get(`/balances/${randomUUID()}/transactions`);
+
+            expect(response.status).toBe(404);
+        });
+
+        it("returns 422 for a malformed id", async () => {
+            const response = await request(app).get("/balances/not-a-uuid/transactions");
+
+            expect(response.status).toBe(422);
+        });
+
+        it("returns 422 when page_size is 0", async () => {
+            const createResponse = await request(app).post("/balances").send({
+                org_id: randomUUID(),
+                user_id: randomUUID(),
+                balance: 10,
+            });
+
+            const response = await request(app)
+                .get(`/balances/${createResponse.body.id}/transactions`)
+                .query({ page_size: 0 });
+
+            expect(response.status).toBe(422);
+        });
+
+        it("returns 422 when page_size is greater than 100", async () => {
+            const createResponse = await request(app).post("/balances").send({
+                org_id: randomUUID(),
+                user_id: randomUUID(),
+                balance: 10,
+            });
+
+            const response = await request(app)
+                .get(`/balances/${createResponse.body.id}/transactions`)
+                .query({ page_size: 101 });
+
+            expect(response.status).toBe(422);
+        });
+
+        it("returns 422 when starting_after is not a valid UUID", async () => {
+            const createResponse = await request(app).post("/balances").send({
+                org_id: randomUUID(),
+                user_id: randomUUID(),
+                balance: 10,
+            });
+
+            const response = await request(app)
+                .get(`/balances/${createResponse.body.id}/transactions`)
+                .query({ starting_after: "not-a-uuid" });
+
+            expect(response.status).toBe(422);
+        });
+
+        it("returns 200 with an empty page and defaults applied when no transactions exist", async () => {
+            const createResponse = await request(app).post("/balances").send({
+                org_id: randomUUID(),
+                user_id: randomUUID(),
+                balance: 10,
+            });
+
+            const response = await request(app).get(
+                `/balances/${createResponse.body.id}/transactions`,
+            );
+
+            expect(response.status).toBe(200);
+            expect(response.body).toEqual({ data: [], has_more: false, next_cursor: null });
+        });
+
+        it("paginates seeded transactions newest first, with has_more/next_cursor across two pages", async () => {
+            const createResponse = await request(app).post("/balances").send({
+                org_id: randomUUID(),
+                user_id: randomUUID(),
+                balance: 10,
+            });
+            const balanceId = createResponse.body.id;
+
+            const seeded = [1, 2, 3].map((amount) =>
+                transactionsRepo.seedTransaction({ balance_id: balanceId, type: "credit", amount }),
+            );
+
+            const firstPage = await request(app)
+                .get(`/balances/${balanceId}/transactions`)
+                .query({ page_size: 2 });
+
+            expect(firstPage.status).toBe(200);
+            expect(firstPage.body.data.map((t: { id: string }) => t.id)).toEqual([
+                seeded[2]!.id,
+                seeded[1]!.id,
+            ]);
+            expect(firstPage.body.has_more).toBe(true);
+            expect(firstPage.body.next_cursor).toBe(seeded[1]!.id);
+
+            const secondPage = await request(app)
+                .get(`/balances/${balanceId}/transactions`)
+                .query({ page_size: 2, starting_after: firstPage.body.next_cursor });
+
+            expect(secondPage.status).toBe(200);
+            expect(secondPage.body.data.map((t: { id: string }) => t.id)).toEqual([seeded[0]!.id]);
+            expect(secondPage.body.has_more).toBe(false);
+            expect(secondPage.body.next_cursor).toBeNull();
         });
     });
 

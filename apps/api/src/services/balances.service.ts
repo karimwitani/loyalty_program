@@ -1,5 +1,6 @@
 import {injectable, inject} from "inversify";
 import { type IBalancesRepository } from "@/repositories/balances.repositorty";
+import { type IBalanceTransactionsRepository } from "@/repositories/balance_transactions.repository";
 import { TYPES } from "@/domain/types/di-tokens.types";
 import {
     Balance,
@@ -9,13 +10,18 @@ import {
     BalanceIncrementSchema,
     BalanceIncrement,
 } from "@/domain/types/balances.types";
+import {
+    BalanceTransactionListQueryInput,
+    BalanceTransactionListQuerySchema,
+} from "@/domain/types/balance_transactions.types";
 
 import { NotFoundError } from "@/domain/errors/base.errors"
 
 @injectable()
 export class BalanceService {
     public constructor(
-        @inject(TYPES.IBalancesRepository) private repo: IBalancesRepository
+        @inject(TYPES.IBalancesRepository) private repo: IBalancesRepository,
+        @inject(TYPES.IBalanceTransactionsRepository) private transactionsRepo: IBalanceTransactionsRepository
     ){}
 
     public async getBalanceById(balance_id: string){
@@ -58,6 +64,17 @@ export class BalanceService {
         return balance;
     }
     
+    public async getBalanceTransactions(balanceId: string, query: BalanceTransactionListQueryInput){
+        const validated = BalanceTransactionListQuerySchema.parse(query);
+
+        const existing = await this.repo.findById(balanceId);
+        if (!existing){
+            throw new NotFoundError(`Balance ${balanceId} not found. Verify that you're passing the proper ID in the request.`)
+        }
+
+        return this.transactionsRepo.findByBalanceId(balanceId, validated);
+    }
+
     public async updateBalance(payload: BalanceUpdate){}
     
     public async deleteBalance(balance_id: string){

@@ -288,6 +288,13 @@ CREATE TABLE "public"."user_roles" (
 -- SECTION: INDEXES
 ---------------------------------
 
+-- INDEX: public.balance_transactions
+-- Postgres does not auto-create an index for FK columns, and
+-- balance_transactions had none beyond its PK. The hot query behind
+-- GET /balances/{id}/transactions is `WHERE balance_id = $1 ORDER BY id DESC
+-- LIMIT n`, which would seq-scan without this.
+CREATE INDEX "idx_balance_transactions_balance_id_id" ON "public"."balance_transactions" ("balance_id", "id" DESC);
+
 ---------------------------------
 -- SECTION: CONSTRAINTS (FK)
 ---------------------------------
