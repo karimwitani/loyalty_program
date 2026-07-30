@@ -1,3 +1,4 @@
+import { PostgrestError } from "@supabase/supabase-js";
 import {
     User,
     UserCreate,
@@ -14,6 +15,17 @@ export class InMemoryUsersRepository implements IUsersRepository {
     }
 
     public async create(data: UserCreate): Promise<User | null> {
+        if (this.rows.has(data.id)) {
+            // Mirrors the pk_users primary key violation Postgres raises
+            // when inserting a row whose id already exists.
+            throw new PostgrestError({
+                message: `duplicate key value violates unique constraint "pk_users"`,
+                details: `Key (id)=(${data.id}) already exists.`,
+                hint: "",
+                code: "23505",
+            });
+        }
+
         const now = new Date().toISOString();
         const row = UserSchema.parse({
             created_at: now,

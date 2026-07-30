@@ -66,7 +66,6 @@ export class UsersController extends Controller {
         // .parse throws an error and we dont have to handle it explicitly here
         // the global error handler will do that
         const validate = UserCreateSchema.parse(body);
-        console.log(validate)
 
         const user = this.usersService.createUser(validate)
         return user
