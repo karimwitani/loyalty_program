@@ -7,7 +7,7 @@ import { z } from "zod"
 
 // Core shared fields
 const BalanceCoreField = z.object({
-    org_id: z.uuid("org_id must be a valid UUID"),
+    reward_program_id: z.uuid("reward_program_id must be a valid UUID"),
     user_id: z.uuid("user_id must be a valid UUID"),
     balance: z.int("balance must be a valid integer")
         .min(0, "balance cannot be negative")
@@ -42,9 +42,9 @@ export const BalanceIncrementSchema = z.object({
 
 // For PATCH requests
 export const BalanceUpdateSchema = BalanceCoreField.omit({
-    "org_id": true, 
+    "reward_program_id": true,
     "user_id": true
-}) // we should not let PATCH update either the user_id or the org_id (not public facing APIs anws)
+}) // we should not let PATCH update either the user_id or the reward_program_id (not public facing APIs anws)
 .partial() // makes any of remaining fields optional
 .strict() // disallows any unknows fields
 

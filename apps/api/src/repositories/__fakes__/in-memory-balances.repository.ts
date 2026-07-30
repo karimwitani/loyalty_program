@@ -76,10 +76,27 @@ export class InMemoryBalancesRepository implements IBalancesRepository {
     }
 
     public async findByOrgId(id: string): Promise<Balance[]> {
-        return [...this.rows.values()].filter((row) => row.org_id === id);
+        // Stub — mirrors BalancesRepository.findByOrgId. balances no longer
+        // carry org_id directly (see LOY-11); org-scoped filtering now
+        // requires a join through reward_programs, which is out of scope.
+        return [];
     }
 
     public async create(data: BalanceCreate): Promise<Balance | null> {
+        const duplicate = [...this.rows.values()].find(
+            (row) => row.reward_program_id === data.reward_program_id && row.user_id === data.user_id
+        );
+        if (duplicate) {
+            // Mirrors the Postgres unique violation Postgres raises for
+            // uq_balances_reward_program_id_user_id.
+            throw new PostgrestError({
+                message: 'duplicate key value violates unique constraint "uq_balances_reward_program_id_user_id"',
+                details: `Key (reward_program_id, user_id)=(${data.reward_program_id}, ${data.user_id}) already exists.`,
+                hint: "",
+                code: "23505",
+            });
+        }
+
         const now = new Date().toISOString();
         const row = BalanceSchema.parse({
             id: randomUUID(),

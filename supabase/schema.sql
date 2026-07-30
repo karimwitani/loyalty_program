@@ -208,7 +208,7 @@ CREATE TABLE "public"."users" (
 -- TABLE: public.balances
 CREATE TABLE "public"."balances" (
 	"id" uuid NOT NULL DEFAULT public.fn_gen_random_uuid_v7(),
-	"org_id" uuid NOT NULL,
+	"reward_program_id" uuid NOT NULL,
 	"user_id" uuid NOT NULL,
 	"balance" INTEGER NOT NULL DEFAULT 0,
     "created_at" timestamptz NOT NULL DEFAULT now(),
@@ -216,13 +216,16 @@ CREATE TABLE "public"."balances" (
 
 	-- PK
 	CONSTRAINT "pk_balances" PRIMARY KEY ("id"),
-	
+
 	-- FK
-	CONSTRAINT "fk_balances_programs_org_id" FOREIGN KEY (org_id) REFERENCES public.organisations(id) ON DELETE CASCADE,
+	CONSTRAINT "fk_balances_reward_program_id" FOREIGN KEY (reward_program_id) REFERENCES public.reward_programs(id) ON DELETE CASCADE,
 	CONSTRAINT "fk_balances_programs_user_id" FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
-	
+
 	-- CHECK
-	CONSTRAINT "check_balance_positive" CHECK (balance >= 0)
+	CONSTRAINT "check_balance_positive" CHECK (balance >= 0),
+
+	-- UNIQUE
+	CONSTRAINT "uq_balances_reward_program_id_user_id" UNIQUE (reward_program_id, user_id)
 );
 
 -- TABLE: public.balances

@@ -25,7 +25,7 @@ describe("BalanceService", () => {
 
         it("returns the balance created via the repository", async () => {
             const payload: BalanceCreate = {
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 100,
             };
@@ -39,21 +39,21 @@ describe("BalanceService", () => {
     describe("createBalance", () => {
         it("persists a valid balance and returns it", async () => {
             const payload: BalanceCreate = {
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 500,
             };
 
             const result = await service.createBalance(payload);
 
-            expect(result?.org_id).toBe(payload.org_id);
+            expect(result?.reward_program_id).toBe(payload.reward_program_id);
             expect(result?.user_id).toBe(payload.user_id);
             expect(result?.balance).toBe(payload.balance);
         });
 
         it("throws when balance is negative", async () => {
             const payload = {
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: -1,
             } as BalanceCreate;
@@ -71,7 +71,7 @@ describe("BalanceService", () => {
 
         it("throws when amount is 0", async () => {
             const created = await service.createBalance({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -83,7 +83,7 @@ describe("BalanceService", () => {
 
         it("increments and returns the updated balance", async () => {
             const created = await service.createBalance({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -103,7 +103,7 @@ describe("BalanceService", () => {
 
         it("redeems and returns the updated balance", async () => {
             const created = await service.createBalance({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -115,7 +115,7 @@ describe("BalanceService", () => {
 
         it("throws when redeeming more than the current balance", async () => {
             const created = await service.createBalance({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -135,7 +135,7 @@ describe("BalanceService", () => {
 
         it("defaults page_size to 25 and delegates to the transactions repository", async () => {
             const created = await service.createBalance({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -147,7 +147,7 @@ describe("BalanceService", () => {
 
         it("throws when page_size is 0", async () => {
             const created = await service.createBalance({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -159,7 +159,7 @@ describe("BalanceService", () => {
 
         it("throws when page_size is greater than 100", async () => {
             const created = await service.createBalance({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -171,7 +171,7 @@ describe("BalanceService", () => {
 
         it("throws when starting_after is not a valid UUID", async () => {
             const created = await service.createBalance({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -183,7 +183,7 @@ describe("BalanceService", () => {
 
         it("pages through transactions seeded on the fake repository, newest first", async () => {
             const created = await service.createBalance({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });
@@ -218,7 +218,7 @@ describe("BalanceService", () => {
 
         it("deletes and returns true when the balance exists", async () => {
             const created = await service.createBalance({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: randomUUID(),
                 balance: 10,
             });

@@ -12,6 +12,7 @@ import { BalanceSchema } from "@/domain/types/balances.types";
 // No auth flow yet - BalancesController has no @Security() decorator.
 describe("BalancesController (e2e)", () => {
     let orgId: string;
+    let rewardProgramId: string;
     let userId: string;
     let authUserId: string;
 
@@ -23,6 +24,14 @@ describe("BalancesController (e2e)", () => {
             .single();
         if (orgError) throw orgError;
         orgId = org.id;
+
+        const { data: rewardProgram, error: rewardProgramError } = await supabase
+            .from("reward_programs")
+            .insert({ title: `e2e-program-${randomUUID()}`, org_id: orgId, type: "point_program" })
+            .select("id")
+            .single();
+        if (rewardProgramError) throw rewardProgramError;
+        rewardProgramId = rewardProgram.id;
 
         const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
             email: `e2e-${randomUUID()}@test.com`,
@@ -45,6 +54,7 @@ describe("BalancesController (e2e)", () => {
 
     afterAll(async () => {
         await supabase.from("users").delete().eq("id", userId);
+        await supabase.from("reward_programs").delete().eq("id", rewardProgramId);
         await supabase.from("organisations").delete().eq("id", orgId);
         await supabase.auth.admin.deleteUser(authUserId);
     });
@@ -52,7 +62,7 @@ describe("BalancesController (e2e)", () => {
     describe("POST /balances", () => {
         it("creates a balance and returns 201", async () => {
             const response = await request(app).post("/balances").send({
-                org_id: orgId,
+                reward_program_id: rewardProgramId,
                 user_id: userId,
                 balance: 300,
             });
@@ -63,7 +73,7 @@ describe("BalancesController (e2e)", () => {
 
         it("returns 422 when balance exceeds the int4 column limit", async () => {
             const response = await request(app).post("/balances").send({
-                org_id: orgId,
+                reward_program_id: rewardProgramId,
                 user_id: userId,
                 balance: 2147483648,
             });
@@ -71,14 +81,28 @@ describe("BalancesController (e2e)", () => {
             expect(response.status).toBe(422);
         });
 
-        it("returns 409 when org_id references a row that doesn't exist", async () => {
+        it("returns 409 when reward_program_id references a row that doesn't exist", async () => {
             const response = await request(app).post("/balances").send({
-                org_id: randomUUID(),
+                reward_program_id: randomUUID(),
                 user_id: userId,
                 balance: 10,
             });
 
             expect(response.status).toBe(409);
+        });
+
+        it("returns 409 when a balance already exists for the same reward_program_id and user_id", async () => {
+            const payload = {
+                reward_program_id: rewardProgramId,
+                user_id: userId,
+                balance: 10,
+            };
+
+            const first = await request(app).post("/balances").send(payload);
+            expect(first.status).toBe(201);
+
+            const second = await request(app).post("/balances").send(payload);
+            expect(second.status).toBe(409);
         });
     });
 
@@ -90,7 +114,7 @@ describe("BalancesController (e2e)", () => {
 
         it("returns 200 and the balance created via POST", async () => {
             const createResponse = await request(app).post("/balances").send({
-                org_id: orgId,
+                reward_program_id: rewardProgramId,
                 user_id: userId,
                 balance: 75,
             });
@@ -110,7 +134,7 @@ describe("BalancesController (e2e)", () => {
 
         it("returns 200 with an empty page when the balance has no transactions", async () => {
             const createResponse = await request(app).post("/balances").send({
-                org_id: orgId,
+                reward_program_id: rewardProgramId,
                 user_id: userId,
                 balance: 100,
             });
@@ -125,7 +149,7 @@ describe("BalancesController (e2e)", () => {
 
         it("pages through the history matching the increments/redeems performed, newest first", async () => {
             const createResponse = await request(app).post("/balances").send({
-                org_id: orgId,
+                reward_program_id: rewardProgramId,
                 user_id: userId,
                 balance: 100,
             });
@@ -172,7 +196,7 @@ describe("BalancesController (e2e)", () => {
 
         it("increments the balance via fn_increment_balance and returns the updated row", async () => {
             const createResponse = await request(app).post("/balances").send({
-                org_id: orgId,
+                reward_program_id: rewardProgramId,
                 user_id: userId,
                 balance: 10,
             });
@@ -193,7 +217,7 @@ describe("BalancesController (e2e)", () => {
             // `instanceof PostgrestError` and the global handler's generic
             // 500 fallback catches it instead. Known/deferred, not fixed here.
             const createResponse = await request(app).post("/balances").send({
-                org_id: orgId,
+                reward_program_id: rewardProgramId,
                 user_id: userId,
                 balance: 2147483647,
             });
@@ -217,7 +241,7 @@ describe("BalancesController (e2e)", () => {
 
         it("redeems the balance via fn_decrement_balance and returns the updated row", async () => {
             const createResponse = await request(app).post("/balances").send({
-                org_id: orgId,
+                reward_program_id: rewardProgramId,
                 user_id: userId,
                 balance: 10,
             });
@@ -236,7 +260,7 @@ describe("BalancesController (e2e)", () => {
             // 23514) instead of wrapping it with toPostgrestError(), so it
             // misses the PostgrestError branch and falls to the generic 500.
             const createResponse = await request(app).post("/balances").send({
-                org_id: orgId,
+                reward_program_id: rewardProgramId,
                 user_id: userId,
                 balance: 10,
             });
@@ -258,7 +282,7 @@ describe("BalancesController (e2e)", () => {
 
         it("deletes the balance and returns 204", async () => {
             const createResponse = await request(app).post("/balances").send({
-                org_id: orgId,
+                reward_program_id: rewardProgramId,
                 user_id: userId,
                 balance: 10,
             });

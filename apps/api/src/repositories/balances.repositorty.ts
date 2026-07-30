@@ -10,7 +10,7 @@ import { toPostgrestError } from "@/utils/postgres-error-handler";
 
 const BALANCES_SELECT_QUERY = `
     id,
-    org_id,
+    reward_program_id,
     user_id,
     balance,
     created_at,
@@ -111,6 +111,11 @@ export class BalancesRepository implements IBalancesRepository {
     };
 
     public async findByOrgId(id: string):Promise<Balance[]>{
+        // Stub — no endpoint calls this yet. balances no longer carry org_id
+        // directly (see LOY-11); org-scoped filtering now requires a join
+        // through reward_programs (balances.reward_program_id ->
+        // reward_programs.id -> reward_programs.org_id). Implementing that
+        // join is out of scope for LOY-11.
         return [];
     };
     
