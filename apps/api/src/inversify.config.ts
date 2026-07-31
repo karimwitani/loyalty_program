@@ -27,6 +27,12 @@ import { InMemoryRewardsRepository } from "@/repositories/__fakes__/in-memory-re
 import { RewardsService } from "@/services/rewards.service";
 import { RewardsController } from "@/controllers/rewards.controller";
 
+// Reward programs
+import { IRewardProgramsRepository, RewardProgramsRepository } from "@/repositories/reward_programs.repository";
+import { InMemoryRewardProgramsRepository } from "@/repositories/__fakes__/in-memory-reward-programs.repository";
+import { RewardProgramsService } from "@/services/reward_programs.service";
+import { RewardProgramsController } from "@/controllers/reward_programs.controller";
+
 export function buildContainer(): Container {
     const container = new Container();
 
@@ -71,6 +77,17 @@ export function buildContainer(): Container {
 
     container.bind<RewardsService>(TYPES.RewardsService).to(RewardsService);
     container.bind<RewardsController>(RewardsController).toSelf();
+
+    // Reward programs
+    // InMemoryRewardProgramsRepository depends on IRewardsRepository (shared
+    // singleton, bound above) so an inline-created reward is visible via
+    // GET /rewards too - see the fake's own comment for why.
+    container.bind<IRewardProgramsRepository>(TYPES.IRewardProgramsRepository)
+        .to(useFakeRepositories ? InMemoryRewardProgramsRepository : RewardProgramsRepository)
+        .inSingletonScope();
+
+    container.bind<RewardProgramsService>(TYPES.RewardProgramsService).to(RewardProgramsService);
+    container.bind<RewardProgramsController>(RewardProgramsController).toSelf();
 
 
     return container;
