@@ -157,18 +157,6 @@ CREATE TYPE "public"."enum_reward_program_type" AS ENUM (
 -- SECTION: TABLES
 ---------------------------------
 
--- TABLE: public.rewards
-CREATE TABLE "public"."rewards" (
-	"id" uuid NOT NULL DEFAULT public.fn_gen_random_uuid_v7(),
-	"name" TEXT NOT NULL,
-	"required_points" INTEGER NOT NULL,
-    "created_at" timestamptz NOT NULL DEFAULT now(),
-    "updated_at" timestamptz NOT NULL DEFAULT now(),
-    
-	CONSTRAINT "pk_rewards" PRIMARY KEY ("id"),
-	CONSTRAINT "check_required_points_positive" CHECK (required_points > 0)
-);
-
 -- TABLE: public.organisations
 CREATE TABLE "public"."organisations" (
 	"id" uuid NOT NULL DEFAULT public.fn_gen_random_uuid_v7(),
@@ -177,6 +165,20 @@ CREATE TABLE "public"."organisations" (
     "updated_at" timestamptz NOT NULL DEFAULT now(),
 
 	CONSTRAINT "pk_organisations" PRIMARY KEY ("id")
+);
+
+-- TABLE: public.rewards
+CREATE TABLE "public"."rewards" (
+	"id" uuid NOT NULL DEFAULT public.fn_gen_random_uuid_v7(),
+	"org_id" uuid NOT NULL,
+	"name" TEXT NOT NULL,
+	"required_points" INTEGER NOT NULL,
+    "created_at" timestamptz NOT NULL DEFAULT now(),
+    "updated_at" timestamptz NOT NULL DEFAULT now(),
+
+	CONSTRAINT "pk_rewards" PRIMARY KEY ("id"),
+	CONSTRAINT "check_required_points_positive" CHECK (required_points > 0),
+	CONSTRAINT "fk_rewards_org_id" FOREIGN KEY (org_id) REFERENCES public.organisations(id) ON DELETE CASCADE
 );
 
 -- TABLE: public.reward_programs
@@ -297,6 +299,11 @@ CREATE TABLE "public"."user_roles" (
 -- GET /balances/{id}/transactions is `WHERE balance_id = $1 ORDER BY id DESC
 -- LIMIT n`, which would seq-scan without this.
 CREATE INDEX "idx_balance_transactions_balance_id_id" ON "public"."balance_transactions" ("balance_id", "id" DESC);
+
+-- INDEX: public.rewards
+-- Postgres does not auto-create an index for FK columns. GET /rewards?org_id=
+-- filters on this column, and every reward row is org-scoped.
+CREATE INDEX "idx_rewards_org_id" ON "public"."rewards" ("org_id");
 
 ---------------------------------
 -- SECTION: CONSTRAINTS (FK)

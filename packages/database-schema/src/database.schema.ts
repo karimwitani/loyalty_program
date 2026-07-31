@@ -203,6 +203,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          org_id: string
           required_points: number
           updated_at: string
         }
@@ -210,6 +211,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          org_id: string
           required_points: number
           updated_at?: string
         }
@@ -217,10 +219,19 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          org_id?: string
           required_points?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_rewards_org_id"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       role_permissions: {
         Row: {

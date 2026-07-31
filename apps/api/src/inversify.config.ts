@@ -21,6 +21,12 @@ import { InMemoryUsersRepository } from "@/repositories/__fakes__/in-memory-user
 import { UsersService } from "@/services/users.service";
 import { UsersController } from "@/controllers/users.controller";
 
+// Rewards
+import { IRewardsRepository, RewardsRepository } from "@/repositories/rewards.repository";
+import { InMemoryRewardsRepository } from "@/repositories/__fakes__/in-memory-rewards.repository";
+import { RewardsService } from "@/services/rewards.service";
+import { RewardsController } from "@/controllers/rewards.controller";
+
 export function buildContainer(): Container {
     const container = new Container();
 
@@ -57,6 +63,14 @@ export function buildContainer(): Container {
 
     container.bind<UsersService>(TYPES.UsersService).to(UsersService);
     container.bind<UsersController>(UsersController).toSelf();
+
+    // Rewards
+    container.bind<IRewardsRepository>(TYPES.IRewardsRepository)
+        .to(useFakeRepositories ? InMemoryRewardsRepository : RewardsRepository)
+        .inSingletonScope();
+
+    container.bind<RewardsService>(TYPES.RewardsService).to(RewardsService);
+    container.bind<RewardsController>(RewardsController).toSelf();
 
 
     return container;
