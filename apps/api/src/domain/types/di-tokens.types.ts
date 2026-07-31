@@ -15,4 +15,8 @@ export const TYPES = {
     // Rewards
     IRewardsRepository: Symbol.for("IRewardsRepository"),
     RewardsService: Symbol.for("RewardsService"),
+
+    // Reward programs
+    IRewardProgramsRepository: Symbol.for("IRewardProgramsRepository"),
+    RewardProgramsService: Symbol.for("RewardProgramsService"),
 }

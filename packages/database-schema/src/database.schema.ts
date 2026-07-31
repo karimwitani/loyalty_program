@@ -349,6 +349,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      fn_create_reward_program_with_reward: {
+        Args: {
+          p_org_id: string
+          p_reward_name: string
+          p_reward_required_points: number
+          p_title: string
+        }
+        Returns: string
+      }
       fn_decrement_balance: {
         Args: { p_amount: number; p_balance_id: string }
         Returns: string
