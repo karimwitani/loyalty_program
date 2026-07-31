@@ -3,12 +3,11 @@ import { type IRewardProgramsRepository } from "@/repositories/reward_programs.r
 import { TYPES } from "@/domain/types/di-tokens.types";
 import {
     RewardProgramCreate,
+    RewardProgramUpdate,
     RewardProgramCreateSchema,
 } from "@/domain/types/reward_programs.types";
+import { NotFoundError } from "@/domain/errors/base.errors"
 
-// PATCH/DELETE (updateRewardProgram/deleteRewardProgram) are intentionally
-// not implemented yet - split off LOY-13 into a follow-up issue. Only
-// read + create ship in this slice.
 @injectable()
 export class RewardProgramsService {
     public constructor(
@@ -45,5 +44,39 @@ export class RewardProgramsService {
             org_id: validated.org_id,
             reward: validated.reward,
         });
+    }
+
+    public async updateRewardProgram(id: string, payload: RewardProgramUpdate) {
+        // 1. check if the reward program exists
+        const rewardProgram = await this.repo.findById(id);
+        if (!rewardProgram) {
+            throw new NotFoundError(`Reward program with id: ${id} not found. Verify that you're passing the proper reward program ID in the request.`)
+        }
+
+        // 2. a no-op PATCH ({}) is a valid request per RewardProgramUpdateSchema
+        // (title is optional), but PostgREST rejects an empty .update({}) with
+        // PGRST116 ("cannot coerce the result to a single JSON object").
+        // Short-circuit here so the fake and real repositories agree on the
+        // answer (200 with the unchanged program) - same fix applied to
+        // RewardsService.updateReward for LOY-12.
+        if (Object.keys(payload).length === 0) {
+            return rewardProgram;
+        }
+
+        // 3. update and return the reward program
+        const updated = await this.repo.update(id, payload);
+        return updated
+    }
+
+    public async deleteRewardProgram(id: string) {
+        // 1. check if the reward program exists
+        const rewardProgram = await this.repo.findById(id);
+        if (!rewardProgram) {
+            throw new NotFoundError(`Reward program with id: ${id} not found. Verify that you're passing the proper reward program ID in the request.`)
+        }
+
+        // 2. delete and return the result
+        const deleted = await this.repo.delete(id);
+        return deleted
     }
 }
