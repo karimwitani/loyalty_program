@@ -289,27 +289,37 @@ export type Database = {
       }
       user_roles: {
         Row: {
+          org_id: string
           role_id: string
           user_id: string
         }
         Insert: {
+          org_id: string
           role_id: string
           user_id: string
         }
         Update: {
+          org_id?: string
           role_id?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "fk_role_permissions_role_id"
+            foreignKeyName: "fk_user_roles_org_id"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_roles_role_id"
             columns: ["role_id"]
             isOneToOne: false
             referencedRelation: "roles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_role_permissions_user_id"
+            foreignKeyName: "fk_user_roles_user_id"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"

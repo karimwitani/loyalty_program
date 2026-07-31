@@ -1,0 +1,11 @@
+ALTER TABLE public.user_roles DROP CONSTRAINT fk_role_permissions_role_id;
+ALTER TABLE public.user_roles DROP CONSTRAINT fk_role_permissions_user_id;
+ALTER TABLE public.permissions ADD CONSTRAINT uq_permissions_name UNIQUE (name);
+ALTER TABLE public.role_permissions ADD CONSTRAINT pk_role_permissions PRIMARY KEY (role_id, permission_id);
+ALTER TABLE public.roles ADD CONSTRAINT uq_roles_name UNIQUE (name);
+ALTER TABLE public.user_roles ADD CONSTRAINT fk_user_roles_role_id FOREIGN KEY (role_id) REFERENCES public.roles(id) ON DELETE CASCADE;
+ALTER TABLE public.user_roles ADD CONSTRAINT fk_user_roles_user_id FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+ALTER TABLE public.user_roles ADD COLUMN org_id uuid NOT NULL;
+ALTER TABLE public.user_roles ADD CONSTRAINT fk_user_roles_org_id FOREIGN KEY (org_id) REFERENCES public.organisations(id) ON DELETE CASCADE;
+ALTER TABLE public.user_roles ADD CONSTRAINT pk_user_roles PRIMARY KEY (user_id, role_id, org_id);
+CREATE INDEX idx_user_roles_user_id_org_id ON public.user_roles (user_id, org_id);
