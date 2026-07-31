@@ -121,6 +121,17 @@ describe("RewardsController (component, fake repository)", () => {
                 org_id: createResponse.body.org_id,
             });
         });
+
+        it("returns 200 and the unchanged reward for an empty body (no-op PATCH)", async () => {
+            const createResponse = await request(app)
+                .post("/rewards")
+                .send({ org_id: randomUUID(), name: `reward-${randomUUID()}`, required_points: 6 });
+
+            const patchResponse = await request(app).patch(`/rewards/${createResponse.body.id}`).send({});
+
+            expect(patchResponse.status).toBe(200);
+            expect(patchResponse.body).toEqual(createResponse.body);
+        });
     });
 
     describe("DELETE /rewards/{id}", () => {

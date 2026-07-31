@@ -64,6 +64,11 @@ describe("RewardUpdateSchema", () => {
     });
 
     test("accepts an empty payload since all remaining fields are optional", () => {
+        // A no-op PATCH is valid at the schema level. RewardsService
+        // short-circuits before this ever reaches the repository, since
+        // PostgREST rejects an empty .update({}) with PGRST116 - see
+        // rewards.service.unit.test.ts and the empty-body component/e2e
+        // cases for the behavior this enables end-to-end.
         expect(RewardUpdateSchema.safeParse({}).success).toBe(true);
     });
 })

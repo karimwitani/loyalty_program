@@ -38,7 +38,16 @@ export class RewardsService {
             throw new NotFoundError(`Reward with id: ${id} not found. Verify that you're passing the proper reward ID in the request.`)
         }
 
-        // 2. update and return the reward
+        // 2. a no-op PATCH ({}) is a valid request per RewardUpdateSchema,
+        // but PostgREST rejects an empty .update({}) with PGRST116 ("cannot
+        // coerce the result to a single JSON object"). Short-circuit here so
+        // the fake and real repositories agree on the answer (200 with the
+        // unchanged reward) instead of only the fake accepting it.
+        if (Object.keys(payload).length === 0) {
+            return reward;
+        }
+
+        // 3. update and return the reward
         const updated = await this.repo.update(id, payload);
         return updated
     }

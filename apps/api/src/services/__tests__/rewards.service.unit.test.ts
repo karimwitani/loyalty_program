@@ -67,6 +67,35 @@ describe("RewardsService", () => {
             expect(updated).toMatchObject({ name: "New name", org_id: orgId });
         });
 
+        it("short-circuits an empty payload instead of forwarding it to the repository", async () => {
+            // RewardUpdateSchema accepts {} as a valid no-op PATCH, but
+            // PostgREST rejects an empty .update({}) with PGRST116. The
+            // service must never forward an empty payload to repo.update -
+            // verified here with a spy repo so the fake's leniency (it
+            // happily accepts {}) can't mask a regression.
+            const updateSpy = vi.fn();
+            const spyRepo: IRewardsRepository = {
+                findById: vi.fn().mockResolvedValue({
+                    id: "reward-id",
+                    org_id: orgId,
+                    name: "Unchanged",
+                    required_points: 6,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                }),
+                findAll: vi.fn(),
+                create: vi.fn(),
+                update: updateSpy,
+                delete: vi.fn(),
+            };
+            const spyService = new RewardsService(spyRepo);
+
+            const result = await spyService.updateReward("reward-id", {});
+
+            expect(result).toMatchObject({ id: "reward-id", name: "Unchanged" });
+            expect(updateSpy).not.toHaveBeenCalled();
+        });
+
         it("propagates a repository error instead of swallowing it", async () => {
             const failingRepo: IRewardsRepository = {
                 findById: vi.fn().mockResolvedValue({

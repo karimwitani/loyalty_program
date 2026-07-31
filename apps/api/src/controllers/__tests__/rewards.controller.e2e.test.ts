@@ -79,4 +79,20 @@ describe("RewardsController (e2e)", () => {
 
         expect(response.status).toBe(422);
     });
+
+    it("returns 200 and the unchanged reward for an empty PATCH body against the real DB", async () => {
+        // Regression case: PostgREST rejects an empty .update({}) with
+        // PGRST116, so RewardsService must short-circuit before the
+        // repository is ever called. This is the one case where the fake
+        // and real repositories previously disagreed.
+        const createResponse = await request(app)
+            .post("/rewards")
+            .send({ org_id: orgId, name: `e2e-reward-${randomUUID()}`, required_points: 6 });
+        createdIds.push(createResponse.body.id);
+
+        const patchResponse = await request(app).patch(`/rewards/${createResponse.body.id}`).send({});
+
+        expect(patchResponse.status).toBe(200);
+        expect(patchResponse.body).toEqual(createResponse.body);
+    });
 });
