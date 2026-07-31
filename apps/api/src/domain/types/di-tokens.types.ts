@@ -11,4 +11,8 @@ export const TYPES = {
     // Users
     IUsersRepository: Symbol.for("IUsersRepository"),
     UsersService: Symbol.for("UsersServices"),
+
+    // Rewards
+    IRewardsRepository: Symbol.for("IRewardsRepository"),
+    RewardsService: Symbol.for("RewardsService"),
 }
