@@ -8,6 +8,8 @@ node_modules
 # Local env files
 .env
 .env.local
+.env.hidden
+setup_kimi.sh
 .env.development.local
 .env.test.local
 .env.production.local
@@ -36,3 +38,4 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+

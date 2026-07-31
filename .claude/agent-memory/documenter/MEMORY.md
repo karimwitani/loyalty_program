@@ -1,0 +1,1 @@
+- [PR already merged before doc review runs](feedback_pr_already_merged.md) — check `gh pr view --json state,mergedAt` first; if merged, open a new small PR against `main` instead of pushing to the dead branch.
