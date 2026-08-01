@@ -45,9 +45,18 @@ export const RewardProgramCreateSchema = z.discriminatedUnion("type", [
     }).strict(),
 ])
 
-// PATCH/DELETE (RewardProgramUpdateSchema, title-only) are split into a
-// follow-up issue - see the reward_programs.service/controller for the
-// pointer. Only read + create ship in this slice.
+// For PATCH requests. Only `title` is patchable:
+// - `type` can't change: converting between point_program/reward_program
+//   means creating or destroying a bound reward and invalidating every
+//   balance on the program - that's a delete-and-recreate, not a patch.
+// - `org_id` can't move a program between organisations.
+// - `reward` isn't accepted here - edit the bound reward's name/threshold via
+//   PATCH /rewards/{id} instead.
+export const RewardProgramUpdateSchema = z.object({
+    title: RewardProgramCoreField.shape.title,
+})
+.partial()
+.strict()
 
 
 //////////////////
@@ -55,3 +64,4 @@ export const RewardProgramCreateSchema = z.discriminatedUnion("type", [
 //////////////////
 export type RewardProgram = z.infer<typeof RewardProgramSchema>;
 export type RewardProgramCreate = z.infer<typeof RewardProgramCreateSchema>;
+export type RewardProgramUpdate = z.infer<typeof RewardProgramUpdateSchema>;

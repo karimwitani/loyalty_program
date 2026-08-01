@@ -88,10 +88,31 @@ describe("RewardProgramsController (e2e)", () => {
         expect(ids).toContain(rewardProgramResponse.body.id);
     });
 
-    it("returns 404 for get on an id that was never created", async () => {
+    it("supports update -> delete end to end", async () => {
+        const createResponse = await request(app)
+            .post("/reward_programs")
+            .send({ title: `e2e-house-points-${randomUUID()}`, org_id: orgId, type: "point_program" });
+        createdProgramIds.push(createResponse.body.id);
+
+        const patchResponse = await request(app)
+            .patch(`/reward_programs/${createResponse.body.id}`)
+            .send({ title: "Updated title" });
+        expect(patchResponse.status).toBe(200);
+        expect(patchResponse.body.title).toBe("Updated title");
+
+        const deleteResponse = await request(app).delete(`/reward_programs/${createResponse.body.id}`);
+        expect(deleteResponse.status).toBe(204);
+
+        const afterDelete = await request(app).get(`/reward_programs/${createResponse.body.id}`);
+        expect(afterDelete.status).toBe(404);
+    });
+
+    it("returns 404 for get/patch/delete on an id that was never created", async () => {
         const missingId = randomUUID();
 
         expect((await request(app).get(`/reward_programs/${missingId}`)).status).toBe(404);
+        expect((await request(app).patch(`/reward_programs/${missingId}`).send({ title: "x" })).status).toBe(404);
+        expect((await request(app).delete(`/reward_programs/${missingId}`)).status).toBe(404);
     });
 
     it("returns 422 for each invalid discriminated-union combination against the full stack", async () => {
@@ -106,6 +127,18 @@ describe("RewardProgramsController (e2e)", () => {
         expect(rewardProgramWithoutReward.status).toBe(422);
     });
 
-    // PATCH/DELETE e2e coverage (including the empty-body PATCH regression
-    // case) is split into a follow-up issue off LOY-13.
+    it("returns 200 and the unchanged program for an empty PATCH body against the real DB", async () => {
+        // Regression case: PostgREST rejects an empty .update({}) with
+        // PGRST116, so RewardProgramsService must short-circuit before the
+        // repository is ever called - see rewards' equivalent fix (LOY-12).
+        const createResponse = await request(app)
+            .post("/reward_programs")
+            .send({ title: `e2e-house-points-${randomUUID()}`, org_id: orgId, type: "point_program" });
+        createdProgramIds.push(createResponse.body.id);
+
+        const patchResponse = await request(app).patch(`/reward_programs/${createResponse.body.id}`).send({});
+
+        expect(patchResponse.status).toBe(200);
+        expect(patchResponse.body).toEqual(createResponse.body);
+    });
 });

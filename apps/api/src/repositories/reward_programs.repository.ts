@@ -1,5 +1,6 @@
 import {
     RewardProgram,
+    RewardProgramUpdate,
     RewardProgramSchema,
 } from "@/domain/types/reward_programs.types";
 import { supabase } from "@/lib/supabase-client";
@@ -36,13 +37,13 @@ export interface RewardProgramCreateRewardProgram {
     };
 }
 
-// update/delete are intentionally not on this interface yet - split into a
-// follow-up issue off LOY-13, see reward_programs.service.ts.
 export interface IRewardProgramsRepository {
     findById: (id: string) => Promise<RewardProgram | null>;
     findAll: (orgId?: string) => Promise<RewardProgram[]>;
     createPointProgram: (data: RewardProgramCreatePointProgram) => Promise<RewardProgram>;
     createRewardProgramWithReward: (data: RewardProgramCreateRewardProgram) => Promise<RewardProgram>;
+    update: (id: string, data: RewardProgramUpdate) => Promise<RewardProgram | null>;
+    delete: (id: string) => Promise<boolean>;
 }
 
 export class RewardProgramsRepository implements IRewardProgramsRepository {
@@ -126,5 +127,36 @@ export class RewardProgramsRepository implements IRewardProgramsRepository {
         }
 
         return program;
+    };
+
+    public async update(id: string, data: RewardProgramUpdate): Promise<RewardProgram | null> {
+        const { data: row, error } = await supabase
+            .from("reward_programs")
+            .update(data)
+            .eq("id", id)
+            .select(REWARD_PROGRAMS_SELECT_QUERY)
+            .single();
+
+        if (error) {
+            throw toPostgrestError(error);
+        }
+        if (!row) {
+            throw new Error("Failed to update reward program");
+        }
+
+        return RewardProgramSchema.parse(row);
+    };
+
+    public async delete(id: string): Promise<boolean> {
+        const { error } = await supabase
+            .from("reward_programs")
+            .delete()
+            .eq("id", id)
+
+        if (error) {
+            throw toPostgrestError(error);
+        }
+
+        return true;
     };
 }
