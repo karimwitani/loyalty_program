@@ -295,9 +295,12 @@ CREATE TABLE "public"."permissions" (
     "name" TEXT NOT NULL,
 	"created_at" timestamptz NOT NULL DEFAULT now(),
     "updated_at" timestamptz NOT NULL DEFAULT now(),
-	
+
 	-- PK
-	CONSTRAINT "pk_permissions" PRIMARY KEY ("id")
+	CONSTRAINT "pk_permissions" PRIMARY KEY ("id"),
+
+	-- UNIQUE
+	CONSTRAINT "uq_permissions_name" UNIQUE ("name")
 );
 
 -- TABLE: public.roles
@@ -307,16 +310,22 @@ CREATE TABLE "public"."roles" (
 	"scope" TEXT NOT NULL,
     "created_at" timestamptz NOT NULL DEFAULT now(),
     "updated_at" timestamptz NOT NULL DEFAULT now(),
-	
+
 	-- PK
-	CONSTRAINT "pk_roles" PRIMARY KEY ("id")
+	CONSTRAINT "pk_roles" PRIMARY KEY ("id"),
+
+	-- UNIQUE
+	CONSTRAINT "uq_roles_name" UNIQUE ("name")
 );
 
 -- TABLE: public.role_permissions
 CREATE TABLE "public"."role_permissions" (
 	"role_id" uuid NOT NULL,
 	"permission_id" uuid NOT NULL,
-	
+
+	-- PK
+	CONSTRAINT "pk_role_permissions" PRIMARY KEY ("role_id", "permission_id"),
+
 	-- FK
 	CONSTRAINT "fk_role_permissions_role_id" FOREIGN KEY (role_id) REFERENCES public.roles(id) ON DELETE CASCADE,
 	CONSTRAINT "fk_role_permissions_permission_id" FOREIGN KEY (permission_id) REFERENCES public.permissions(id) ON DELETE CASCADE
@@ -326,10 +335,18 @@ CREATE TABLE "public"."role_permissions" (
 CREATE TABLE "public"."user_roles" (
 	"user_id" uuid NOT NULL,
 	"role_id" uuid NOT NULL,
-	
+	"org_id" uuid NOT NULL,
+
+	-- PK
+	-- org_id is NOT NULL by design: a role is always scoped to a tenant, and
+	-- customers get no row at all here (see the RBAC PRD's "Why customer is
+	-- not a role"). Do not make org_id nullable.
+	CONSTRAINT "pk_user_roles" PRIMARY KEY ("user_id", "role_id", "org_id"),
+
 	-- FK
-	CONSTRAINT "fk_role_permissions_user_id" FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
-	CONSTRAINT "fk_role_permissions_role_id" FOREIGN KEY (role_id) REFERENCES public.roles(id) ON DELETE CASCADE
+	CONSTRAINT "fk_user_roles_user_id" FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
+	CONSTRAINT "fk_user_roles_role_id" FOREIGN KEY (role_id) REFERENCES public.roles(id) ON DELETE CASCADE,
+	CONSTRAINT "fk_user_roles_org_id" FOREIGN KEY (org_id) REFERENCES public.organisations(id) ON DELETE CASCADE
 );
 
 ---------------------------------
@@ -348,6 +365,12 @@ CREATE INDEX "idx_balance_transactions_balance_id_id" ON "public"."balance_trans
 -- filters on this column, and every reward row is org-scoped.
 CREATE INDEX "idx_rewards_org_id" ON "public"."rewards" ("org_id");
 
+-- INDEX: public.user_roles
+-- This is the hot path: every authorized request resolves permissions by
+-- (user_id, org_id). The composite PK leads with user_id so it partially
+-- serves this, but this explicit two-column index keeps the lookup covering
+-- as the PK evolves.
+CREATE INDEX "idx_user_roles_user_id_org_id" ON "public"."user_roles" ("user_id", "org_id");
 -- INDEX: public.reward_programs
 -- Postgres does not auto-create an index for FK columns. GET /reward_programs?org_id=
 -- filters on org_id, and reward_id is looked up by fk_reward_programs_reward_id
