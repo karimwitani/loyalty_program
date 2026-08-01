@@ -46,6 +46,8 @@ describe("RewardProgramsService", () => {
                 findAll: vi.fn(),
                 createPointProgram: vi.fn().mockResolvedValue({ id: "id", title: "House Points", org_id: orgId, type: "point_program", reward: null, created_at: "x", updated_at: "x" }),
                 createRewardProgramWithReward: vi.fn(),
+                update: vi.fn(),
+                delete: vi.fn(),
             };
             const spyService = new RewardProgramsService(spyRepo);
 
@@ -65,6 +67,8 @@ describe("RewardProgramsService", () => {
                     reward: { id: "reward-id", org_id: orgId, name: "Free coffee", required_points: 6, created_at: "x", updated_at: "x" },
                     created_at: "x", updated_at: "x",
                 }),
+                update: vi.fn(),
+                delete: vi.fn(),
             };
             const spyService = new RewardProgramsService(spyRepo);
 
@@ -112,7 +116,57 @@ describe("RewardProgramsService", () => {
         });
     });
 
-    // updateRewardProgram/deleteRewardProgram are split into a follow-up
-    // issue off LOY-13, along with the /reward_programs update/delete
-    // endpoints and their PATCH/DELETE coverage at every tier.
+    describe("updateRewardProgram", () => {
+        it("throws NotFoundError when the reward program does not exist", async () => {
+            await expect(
+                service.updateRewardProgram(randomUUID(), { title: "New title" }),
+            ).rejects.toThrow(/not found/i);
+        });
+
+        it("updates and returns the reward program when it exists", async () => {
+            const created = await service.createRewardProgram({ title: "Old title", org_id: orgId, type: "point_program" });
+
+            const updated = await service.updateRewardProgram(created.id, { title: "New title" });
+
+            expect(updated).toMatchObject({ title: "New title", org_id: orgId });
+        });
+
+        it("short-circuits an empty payload instead of forwarding it to the repository", async () => {
+            // RewardProgramUpdateSchema accepts {} as a valid no-op PATCH, but
+            // PostgREST rejects an empty .update({}) with PGRST116. The
+            // service must never forward an empty payload to repo.update -
+            // verified here with a spy repo so the fake's leniency can't mask
+            // a regression, mirroring the fix applied for rewards (LOY-12).
+            const updateSpy = vi.fn();
+            const spyRepo: IRewardProgramsRepository = {
+                findById: vi.fn().mockResolvedValue({
+                    id: "program-id", title: "Unchanged", org_id: orgId, type: "point_program", reward: null,
+                    created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+                }),
+                findAll: vi.fn(),
+                createPointProgram: vi.fn(),
+                createRewardProgramWithReward: vi.fn(),
+                update: updateSpy,
+                delete: vi.fn(),
+            };
+            const spyService = new RewardProgramsService(spyRepo);
+
+            const result = await spyService.updateRewardProgram("program-id", {});
+
+            expect(result).toMatchObject({ id: "program-id", title: "Unchanged" });
+            expect(updateSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("deleteRewardProgram", () => {
+        it("throws NotFoundError when the reward program does not exist", async () => {
+            await expect(service.deleteRewardProgram(randomUUID())).rejects.toThrow(/not found/i);
+        });
+
+        it("deletes and returns true when the reward program exists", async () => {
+            const created = await service.createRewardProgram({ title: "To delete", org_id: orgId, type: "point_program" });
+
+            expect(await service.deleteRewardProgram(created.id)).toBe(true);
+        });
+    });
 });

@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest"
 import {
     RewardProgramSchema,
     RewardProgramCreateSchema,
+    RewardProgramUpdateSchema,
 } from "@/domain/types/reward_programs.types"
 
 const REWARD = {
@@ -96,5 +97,32 @@ describe("RewardProgramCreateSchema", () => {
     });
 })
 
-// RewardProgramUpdateSchema (PATCH) is split into a follow-up issue off
-// LOY-13, along with the /reward_programs update/delete endpoints.
+describe("RewardProgramUpdateSchema", () => {
+    test("accepts a title-only payload", () => {
+        expect(RewardProgramUpdateSchema.safeParse({ title: "New title" }).success).toBe(true);
+    });
+
+    test("rejects a payload attempting to change type", () => {
+        expect(RewardProgramUpdateSchema.safeParse({ type: "point_program" }).success).toBe(false);
+    });
+
+    test("rejects a payload attempting to change org_id", () => {
+        expect(RewardProgramUpdateSchema.safeParse({ org_id: REWARD.org_id }).success).toBe(false);
+    });
+
+    test("rejects a payload attempting to change reward", () => {
+        expect(RewardProgramUpdateSchema.safeParse({ reward: REWARD }).success).toBe(false);
+    });
+
+    test("rejects an empty title", () => {
+        expect(RewardProgramUpdateSchema.safeParse({ title: "" }).success).toBe(false);
+    });
+
+    test("accepts an empty payload since title is optional", () => {
+        // A no-op PATCH is valid at the schema level. RewardProgramsService
+        // short-circuits before this ever reaches the repository, since
+        // PostgREST rejects an empty .update({}) with PGRST116 - see the
+        // same fix applied for RewardsService.updateReward (LOY-12).
+        expect(RewardProgramUpdateSchema.safeParse({}).success).toBe(true);
+    });
+})

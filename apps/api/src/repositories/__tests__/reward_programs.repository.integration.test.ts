@@ -119,9 +119,24 @@ describe("RewardProgramsRepository (integration, real local Supabase)", () => {
         });
     });
 
-    // repo.update/repo.delete are split into a follow-up issue off LOY-13 -
-    // cleanup in this file still uses raw `supabase.from("reward_programs")
-    // .delete()` calls, not the repository method.
+    describe("update / delete", () => {
+        it("update persists the new title and rejects an unknown id", async () => {
+            const created = await repo.createPointProgram({ title: "Old title", org_id: orgId });
+            createdProgramIds.push(created.id);
+
+            const updated = await repo.update(created.id, { title: "New title" });
+            expect(updated).toMatchObject({ title: "New title", org_id: orgId });
+
+            await expect(repo.update(randomUUID(), { title: "x" })).rejects.toThrow();
+        });
+
+        it("delete removes the row", async () => {
+            const created = await repo.createPointProgram({ title: "To delete", org_id: orgId });
+
+            expect(await repo.delete(created.id)).toBe(true);
+            expect(await repo.findById(created.id)).toBeNull();
+        });
+    });
 
     describe("CHECK constraint (bypassing zod, direct insert)", () => {
         it("rejects a point_program row carrying a reward_id", async () => {

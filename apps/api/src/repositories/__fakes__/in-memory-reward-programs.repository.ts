@@ -3,6 +3,7 @@ import { injectable, inject } from "inversify";
 
 import {
     RewardProgram,
+    RewardProgramUpdate,
     RewardProgramSchema,
 } from "@/domain/types/reward_programs.types";
 import {
@@ -103,6 +104,21 @@ export class InMemoryRewardProgramsRepository implements IRewardProgramsReposito
         return this.toRewardProgram(row);
     }
 
-    // update/delete are intentionally not implemented yet - split into a
-    // follow-up issue off LOY-13, see reward_programs.service.ts.
+    public async update(id: string, data: RewardProgramUpdate): Promise<RewardProgram | null> {
+        const existing = this.rows.get(id);
+        if (!existing) {
+            return null;
+        }
+        const updated: RewardProgramRow = {
+            ...existing,
+            ...data,
+            updated_at: new Date().toISOString(),
+        };
+        this.rows.set(id, updated);
+        return this.toRewardProgram(updated);
+    }
+
+    public async delete(id: string): Promise<boolean> {
+        return this.rows.delete(id);
+    }
 }

@@ -122,6 +122,84 @@ describe("RewardProgramsController (component, fake repository)", () => {
         });
     });
 
-    // PATCH /reward_programs/{id} and DELETE /reward_programs/{id} are split
-    // into a follow-up issue off LOY-13.
+    describe("PATCH /reward_programs/{id}", () => {
+        it("returns 404 for an id that was never created", async () => {
+            const response = await request(app)
+                .patch(`/reward_programs/${randomUUID()}`)
+                .send({ title: "New title" });
+
+            expect(response.status).toBe(404);
+        });
+
+        it("returns 422 when the body attempts to change type, org_id, or reward", async () => {
+            const createResponse = await request(app)
+                .post("/reward_programs")
+                .send({ title: `Program ${randomUUID()}`, org_id: randomUUID(), type: "point_program" });
+
+            const changeType = await request(app)
+                .patch(`/reward_programs/${createResponse.body.id}`)
+                .send({ type: "reward_program" });
+            expect(changeType.status).toBe(422);
+
+            const changeOrg = await request(app)
+                .patch(`/reward_programs/${createResponse.body.id}`)
+                .send({ org_id: randomUUID() });
+            expect(changeOrg.status).toBe(422);
+
+            const changeReward = await request(app)
+                .patch(`/reward_programs/${createResponse.body.id}`)
+                .send({ reward: { name: "x", required_points: 1 } });
+            expect(changeReward.status).toBe(422);
+        });
+
+        it("updates and returns the reward program's title only", async () => {
+            const createResponse = await request(app)
+                .post("/reward_programs")
+                .send({ title: `Program ${randomUUID()}`, org_id: randomUUID(), type: "point_program" });
+
+            const patchResponse = await request(app)
+                .patch(`/reward_programs/${createResponse.body.id}`)
+                .send({ title: "Updated title" });
+
+            expect(patchResponse.status).toBe(200);
+            expect(patchResponse.body).toMatchObject({
+                title: "Updated title",
+                org_id: createResponse.body.org_id,
+                type: "point_program",
+            });
+        });
+
+        it("returns 200 and the unchanged reward program for an empty body (no-op PATCH)", async () => {
+            const createResponse = await request(app)
+                .post("/reward_programs")
+                .send({ title: `Program ${randomUUID()}`, org_id: randomUUID(), type: "point_program" });
+
+            const patchResponse = await request(app).patch(`/reward_programs/${createResponse.body.id}`).send({});
+
+            expect(patchResponse.status).toBe(200);
+            expect(patchResponse.body).toEqual(createResponse.body);
+        });
+    });
+
+    describe("DELETE /reward_programs/{id}", () => {
+        it("returns 404 for an id that was never created", async () => {
+            const response = await request(app).delete(`/reward_programs/${randomUUID()}`);
+
+            expect(response.status).toBe(404);
+        });
+
+        it("deletes the reward program and returns 204 with no body", async () => {
+            const createResponse = await request(app)
+                .post("/reward_programs")
+                .send({ title: `Program ${randomUUID()}`, org_id: randomUUID(), type: "point_program" });
+
+            const deleteResponse = await request(app).delete(`/reward_programs/${createResponse.body.id}`);
+
+            expect(deleteResponse.status).toBe(204);
+            expect(deleteResponse.body).toEqual({});
+
+            const getResponse = await request(app).get(`/reward_programs/${createResponse.body.id}`);
+            expect(getResponse.status).toBe(404);
+        });
+    });
 });
