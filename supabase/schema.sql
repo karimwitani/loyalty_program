@@ -126,6 +126,37 @@ BEGIN
 END
 $$;
 
+-- FUNCTION - public.fn_create_reward_program_with_reward()
+/** Atomically creates a reward row and a `reward_program` row bound to it,
+ * returning the new program's id. Mirrors fn_increment_balance: it inserts
+ * the reward, then the program, in one plpgsql function body so both writes
+ * commit or neither does - the reward inherits org_id from the program
+ * argument, guaranteeing they always belong to the same organisation.
+*/
+CREATE OR REPLACE FUNCTION public.fn_create_reward_program_with_reward(p_org_id uuid, p_title text, p_reward_name text, p_reward_required_points int4)
+RETURNS uuid
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_reward_id uuid;
+  v_reward_program_id uuid;
+BEGIN
+	IF p_title IS NULL OR length(trim(p_title)) = 0 THEN
+		RAISE EXCEPTION 'title must not be empty';
+	END IF;
+
+	INSERT INTO rewards (org_id, name, required_points)
+	VALUES (p_org_id, p_reward_name, p_reward_required_points)
+	RETURNING id INTO v_reward_id;
+
+	INSERT INTO reward_programs (org_id, title, type, reward_id)
+	VALUES (p_org_id, p_title, 'reward_program', v_reward_id)
+	RETURNING id INTO v_reward_program_id;
+
+	RETURN v_reward_program_id;
+END
+$$;
+
 -- FUNCTION - fn_handle_updated_at - Auto-update updated_at on profile changes
 CREATE OR REPLACE FUNCTION public.fn_handle_updated_at()
 RETURNS trigger
@@ -192,8 +223,20 @@ CREATE TABLE "public"."reward_programs" (
     "updated_at" timestamptz NOT NULL DEFAULT now(),
 
 	CONSTRAINT "pk_reward_programs" PRIMARY KEY ("id"),
-	CONSTRAINT "fk_reward_programs_reward_id" FOREIGN KEY (reward_id) REFERENCES public.rewards(id) ON DELETE SET NULL,
-	CONSTRAINT "fk_reward_programs_org_id" FOREIGN KEY (org_id) REFERENCES public.organisations(id) ON DELETE CASCADE
+	-- ON DELETE RESTRICT (not SET NULL/CASCADE): a reward bound to a program
+	-- is load-bearing for the type <-> reward_id invariant below. SET NULL
+	-- would violate that invariant on delete; CASCADE would delete the whole
+	-- program (and, post-LOY-11, every balance on it) just because someone
+	-- removed a reward. Refusing the delete with a 409 is the safe default -
+	-- see docs/api_design.md and LOY-13.
+	CONSTRAINT "fk_reward_programs_reward_id" FOREIGN KEY (reward_id) REFERENCES public.rewards(id) ON DELETE RESTRICT,
+	CONSTRAINT "fk_reward_programs_org_id" FOREIGN KEY (org_id) REFERENCES public.organisations(id) ON DELETE CASCADE,
+	-- 'reward_program' (stamp card) must have exactly one bound reward;
+	-- 'point_program' (open-ended points) must have none.
+	CONSTRAINT "check_reward_programs_type_reward_id" CHECK (
+		(type = 'reward_program' AND reward_id IS NOT NULL) OR
+		(type = 'point_program'  AND reward_id IS NULL)
+	)
 );
 
 -- TABLE: public.users
@@ -328,6 +371,12 @@ CREATE INDEX "idx_rewards_org_id" ON "public"."rewards" ("org_id");
 -- serves this, but this explicit two-column index keeps the lookup covering
 -- as the PK evolves.
 CREATE INDEX "idx_user_roles_user_id_org_id" ON "public"."user_roles" ("user_id", "org_id");
+-- INDEX: public.reward_programs
+-- Postgres does not auto-create an index for FK columns. GET /reward_programs?org_id=
+-- filters on org_id, and reward_id is looked up by fk_reward_programs_reward_id
+-- on every reward delete (ON DELETE RESTRICT existence check).
+CREATE INDEX "idx_reward_programs_org_id" ON "public"."reward_programs" ("org_id");
+CREATE INDEX "idx_reward_programs_reward_id" ON "public"."reward_programs" ("reward_id");
 
 ---------------------------------
 -- SECTION: CONSTRAINTS (FK)
