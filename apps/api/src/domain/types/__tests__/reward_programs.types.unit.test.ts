@@ -94,6 +94,22 @@ describe("RewardProgramCreateSchema", () => {
             }).success,
         ).toBe(false);
     });
+
+    // Whitespace-only titles used to pass here but fail
+    // fn_create_reward_program_with_reward's `length(trim(p_title)) = 0`
+    // guard in Postgres - 422 for reward_program, but silently stored as
+    // literal "   " for point_program (no DB-level guard on that column).
+    // .trim() before .min(1) on RewardProgramCoreField.title closes that gap.
+    test("rejects a whitespace-only title", () => {
+        expect(RewardProgramCreateSchema.safeParse({ ...POINT_PROGRAM, title: "   " }).success).toBe(false);
+        expect(RewardProgramCreateSchema.safeParse({ ...REWARD_PROGRAM_CREATE, title: "   " }).success).toBe(false);
+    });
+
+    test("trims incidental leading/trailing whitespace from a non-empty title", () => {
+        const parsed = RewardProgramCreateSchema.safeParse({ ...POINT_PROGRAM, title: "  House Points  " });
+        expect(parsed.success).toBe(true);
+        expect(parsed.success && parsed.data.title).toBe("House Points");
+    });
 })
 
 // RewardProgramUpdateSchema (PATCH) is split into a follow-up issue off

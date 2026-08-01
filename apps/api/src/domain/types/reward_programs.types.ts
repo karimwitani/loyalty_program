@@ -9,7 +9,13 @@ import { RewardSchema, RewardCreateSchema } from "@/domain/types/rewards.types"
 
 // Core shared fields
 const RewardProgramCoreField = z.object({
-    title: z.string().min(1, "title must not be empty"),
+    // .trim() before .min(1) so a whitespace-only title ("   ") is rejected
+    // here the same way fn_create_reward_program_with_reward's own
+    // `length(trim(p_title)) = 0` guard rejects it in Postgres - without the
+    // trim, zod let "   " through while the RPC raised on it, so the same
+    // payload was 422 through one path and (for point_program, which has no
+    // DB-level guard on title) silently stored as literal "   " on the other.
+    title: z.string().trim().min(1, "title must not be empty"),
     org_id: z.uuid("org_id must be a valid UUID"),
 })
 

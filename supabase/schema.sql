@@ -422,6 +422,15 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA public GRANT UPDATE ON SE
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON FUNCTIONS FROM anon, authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA public GRANT ALL ON FUNCTIONS TO "postgres";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA public GRANT ALL ON FUNCTIONS TO "service_role";
+-- Grant EXECUTE to service_role on all functions already declared above (mirrors
+-- the "GRANT ... ON ALL TABLES" line for tables) - the ALTER DEFAULT PRIVILEGES
+-- statement above only covers functions created *after* this point in the
+-- declarative build, so any function declared earlier in this file (all of
+-- them, since FUNCTIONS is the first section) needs this explicit grant or it
+-- silently ends up without service_role EXECUTE. See LOY-13 follow-up: this
+-- bit fn_create_reward_program_with_reward, which `supabase db diff --local`
+-- flagged as an unwanted REVOKE against the migration-history build.
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;
 
 -- disable PostgREST API endpoint entirely for anon and authenticated roles, so that they cannot access any endpoints unless explicitly granted
 ALTER ROLE anon SET pgrst.openapi_mode TO 'disabled';
